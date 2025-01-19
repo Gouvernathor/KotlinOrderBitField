@@ -99,13 +99,13 @@ public fun generateCodes(
         )
     }
 
-    // assert sum(longer.values()) + len(direct) == nCodes
+    // assert longer.values.sum() + direct.size.toUInt() == nCodes
 
     for (cInt in startDigit1..endDigit1) {
         val c = cInt.toUByte()
         val pre = prefix + c
 
-        if (direct.contains(c)) {
+        if (c in direct) {
             yield(pre)
         }
 
