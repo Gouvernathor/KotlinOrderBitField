@@ -32,7 +32,7 @@ public fun generateCodes(
     }
 
     val startDigit1 = if (!codeStart.isEmpty()) codeStart.first() else 0u
-    val endDigit1 = if (!codeEnd.isNullOrEmpty()) codeEnd.first() else MAX_BYTE
+    val endDigit1 = if (codeEnd != null) codeEnd.first() else MAX_BYTE
 
     // there is going to be direct codes (of the form prefix+x)
     // and longer codes (of the form prefix+x+y...)
