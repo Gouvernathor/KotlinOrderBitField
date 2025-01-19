@@ -74,7 +74,7 @@ public class OrderBitField protected constructor(code: Code, val maxSize: UInt?)
      */
     operator fun plus(other: OrderBitField): OrderBitField {
         require(bounded) { "the left operand must be bounded for addition to work" }
-        val code = this as Code + other as Code
+        val code = this.rPad() + other as Code
         val newMaxSize = other.maxSize ?.plus(maxSize!!)
         return OrderBitField(code, newMaxSize)
     }
