@@ -20,7 +20,6 @@ public fun generateCodes(
     codeEnd: List<UByte>?,
     prefix: List<UByte>,
 ): Sequence<List<UByte>> = sequence {
-    // call yield() and/or yieldAll()
     if (nCodes == 0u) {
         return@sequence
     }
@@ -146,4 +145,48 @@ fun ponderatedDistributeIndices(
     }
 
     return attrib
+}
+
+/**
+ * Spreads nCodes codes among the mn to mx digits inclusive.
+ * nCodes must be positive, and lower or equal to the number of available digits.
+ *
+ * If there are 2 codes to spread, they are attributed on a thirds basis.
+ * Otherwise, one code is placed at the middle digit rounded down,
+ * and the others are spread recursively among the remaining digits.
+ */
+fun simpleDistributeIndices(
+    nCodes: UInt,
+    mn: UByte, mx: UByte,
+): Sequence<UByte> = sequence {
+    if (nCodes <= 0u) {
+        return@sequence
+    }
+
+    val nChars = mx - mn + 1u
+
+    // assert nCodes <= nChars
+
+    if (nCodes == 2u) {
+        yield((mn + (nChars - 1u)/3u).toUByte())
+        yield((mn + (2u*nChars - 1u)/3u).toUByte())
+        return@sequence
+    }
+
+    // midpoint
+    val pivot = (mn + nChars/2u).toUByte()
+
+    if (nCodes == 1u) {
+        yield(pivot)
+    } else {
+        // number of codes to be put on the right
+        // (must be lower or equal to those on the left because of how the pivot is computed,
+        // which favors the fact that appending is more frequent than prepending,
+        // so if we must choose, best leave more room after than before)
+        val right = (nCodes - 1u) / 2u
+
+        yieldAll(simpleDistributeIndices(nCodes-1u-right, mn, (pivot-1u).toUByte()))
+        yield(pivot)
+        yieldAll(simpleDistributeIndices(right, (pivot+1u).toUByte(), mx))
+    }
 }
