@@ -53,7 +53,8 @@ public class OrderBitField protected constructor(code: Code, val maxSize: UInt?)
 
     /**
      * Returns an OrderBitField instance whose size is exactly the given size (or the native maxsize if not provided).
-     * Useful when matching a BINARY(x) (rather than VARBINARY) column in a database.
+     * Primarily used as part as code concatenation,
+     * also useful when matching a BINARY(x) (rather than VARBINARY) column in a database.
      */
     fun rPad(padSize: UInt? = maxSize): OrderBitField {
         require(padSize != null) { "the pad size must be specified when the OrderBitField is unbounded" }
@@ -65,11 +66,12 @@ public class OrderBitField protected constructor(code: Code, val maxSize: UInt?)
 
     /**
      * Addition is only supported when the left operand is bounded (when it has a maxSize).
+     *
      * To support this uniformly in systems where orderBitFields always have the same maxSize,
      * (for instance when they match a VARBINARY(x) column in a database),
      * you can simply provide a replacement for the Companion object whose methods take no maxSize parameter,
      * and pass the chosen maxSize to the actual Companion collective constructor functions.
-     * If/when match a BINARY(x) column, you can make the proxy Companion object's methods
+     * If/when it matches a BINARY(x) column, you can make the proxy Companion object's methods
      * map their return values using OrderBitField::rPad.
      */
     operator fun plus(other: OrderBitField): OrderBitField {
