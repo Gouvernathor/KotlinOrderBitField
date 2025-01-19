@@ -1,3 +1,5 @@
+typealias Code = List<UByte>
+
 val MAX_BYTE = UByte.Companion.MAX_VALUE
 val TOP_VALUE = MAX_BYTE + 1u
 val MAGIC_MIDDLE = (TOP_VALUE / 2u).toUByte()
@@ -5,7 +7,7 @@ val MAGIC_MIDDLE = (TOP_VALUE / 2u).toUByte()
 /**
  * Requires s1 and s2 to be ordered, in that order.
  */
-public fun commonPrefix(s1: List<UByte>, s2: List<UByte>): List<UByte> {
+public fun commonPrefix(s1: Code, s2: Code): Code {
     for ((i, c) in s1.withIndex()) {
         if (c != s2[i]) {
             return s1.drop(i)
@@ -14,12 +16,17 @@ public fun commonPrefix(s1: List<UByte>, s2: List<UByte>): List<UByte> {
     return s1
 }
 
+/**
+ * The codes are generated in order.
+ * codeStart may be empty but not null,
+ * codeEnd may be null but not empty.
+ */
 public fun generateCodes(
     nCodes: UInt,
-    codeStart: List<UByte>,
-    codeEnd: List<UByte>?,
-    prefix: List<UByte>,
-): Sequence<List<UByte>> = sequence {
+    codeStart: Code,
+    codeEnd: Code?,
+    prefix: Code,
+): Sequence<Code> = sequence {
     if (nCodes == 0u) {
         return@sequence
     }
@@ -33,7 +40,7 @@ public fun generateCodes(
     // range of possible direct digits : [[startDigit1 + 1, endDigit1]]
     val nDirectCandidates = endDigit1 - startDigit1
     // the x direct digits that will be used for direct codes
-    val direct: Collection<UByte> // Iterable ?
+    val direct: Collection<UByte>
     // the number of longer codes that will be generated for each x digit
     val longer: Map<UByte, UInt>
 
@@ -69,7 +76,7 @@ public fun generateCodes(
         // in any case, startDigit1 is always valid as a start for longer codes
 
         val longerMaxBoundary: UByte // inclusive boundary
-        if (!codeEnd.isNullOrEmpty()) {
+        if (codeEnd != null) {
             // if there is an end boundary
             if (codeEnd.size > 1) {
                 // if it has a second digit,
@@ -107,7 +114,7 @@ public fun generateCodes(
             yieldAll(generateCodes(
                 nRecurs,
                 if (codeStart.size > 0 && c == startDigit1) codeStart.drop(1) else emptyList(),
-                if (!codeEnd.isNullOrEmpty() && c == endDigit1) codeEnd.drop(1) else null,
+                if (codeEnd != null && c == endDigit1) codeEnd.drop(1) else null,
                 pre))
         }
     }
