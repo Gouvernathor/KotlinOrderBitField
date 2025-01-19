@@ -2,6 +2,9 @@ val MAX_BYTE = UByte.Companion.MAX_VALUE
 val TOP_VALUE = MAX_BYTE + 1u
 val MAGIC_MIDDLE = (TOP_VALUE / 2u).toUByte()
 
+/**
+ * Requires s1 and s2 to be ordered, in that order.
+ */
 public fun commonPrefix(s1: List<UByte>, s2: List<UByte>): List<UByte> {
     for ((i, c) in s1.withIndex()) {
         if (c != s2[i]) {
@@ -53,11 +56,9 @@ public fun generateCodes(
 
         // distributing longer codes among the digits by which they will begin
         // interval of those starting digits : [[startDigit1, endDigit1]]
-        val longerPonderation = mutableMapOf<UByte, UInt>()
-        // The default value will be applied when passing the readonly map to the function
-        // Changed from python :
-        // - takes (unsigned) integral values, and
-        // - the default will be TOP_VALUE rather than 1
+        val longerPonderation = mutableMapOf<UByte, UInt>().withDefault { TOP_VALUE }
+        // could afford to have UByte values, but unnecessary (could also be floats for that matter)
+        // ints are easier to handle in K and incur no precision loss
 
         // if we have a starting boundary and it has a second digit,
         // the first digit's ponderation is the distance between
@@ -96,7 +97,7 @@ public fun generateCodes(
 
     for (cInt in startDigit1..endDigit1) {
         val c = cInt.toUByte()
-        val pre = prefix + listOf(c)
+        val pre = prefix + c
 
         if (direct.contains(c)) {
             yield(pre)
@@ -111,4 +112,38 @@ public fun generateCodes(
                 pre))
         }
     }
+}
+
+/**
+ * Spreads nCodes codes among the mn to mx digits inclusive,
+ * with a ponderation for each index.
+ */
+fun ponderatedDistributeIndices(
+    nCodes: UInt,
+    mn: UByte, mx: UByte,
+    ponderation: Map<UByte, UInt>,
+): Map<UByte, UInt> {
+    // assert 0u <= mn
+    // assert mn < mx
+    // assert mx < TOP_VALUE
+
+    val nChars = mx - mn + 1u
+    val attrib = mutableMapOf<UByte, UInt>().withDefault { 0u }
+    var remaining = nCodes
+
+    if (nCodes > nChars) {
+        val total = (mn..mx).map({ponderation[it.toUByte()]!!}).sum()
+        for (cInt in mn..mx) {
+            val c = cInt.toUByte()
+            val value = nCodes * ponderation[c]!! / total
+            attrib[c] = value
+            remaining -= value
+        }
+    }
+
+    for (c in simpleDistributeIndices(remaining, mn, mx)) {
+        attrib[c] = attrib[c]!! + 1u
+    }
+
+    return attrib
 }
