@@ -1,10 +1,10 @@
-// don't use MutableCollection (the add and addAll methods don't provide where to insert the elements)
-
-// TODO maybe make it implement the Set interface
 /**
  * Like a set, elements are unique.
- * Unlike a set, elements are ordered.
+ * Elements are not sorted.
+ * Like a list, elements are ordered.
  * Unlike a list, elements' indices are not contiguous, and opaque (you can't find an element by its index).
+ * Unlike any mutable collection, you can't insert an element without specifying where to insert it relative to the existing elements.
+ * The container is mutable in two ways: you can add and remove elements, and you can also efficiently reorder them.
  *
  * Unless otherwise specified, mutation methods generally ignore
  * whether the elements to insert are already in the container or not.
@@ -27,12 +27,12 @@ public interface ReorderableSet<E>: Set<E> {
      * It is an error to provide the same element as both start and end,
      * or to provide start or end elements which are not in the container.
      * It is unspecified and at the very least unoptimized to include the start or end element in the new elements.
-     * When providing non-contiguous elements as start and end, the ordering between,
-     * on one part, any element previously between start and end, and,
-     * on the other part, any of the new elements, is unspecified.
+     * When providing non-contiguous elements as start and end, the ordering
+     * between, on one part, any element previously between start and end,
+     * and on the other part, any of the new elements, is unspecified.
+     * To avoid these issues, prefer using the putNextTo method.
      */
     fun putBetween(start: E, end: E, vararg newElements: E): Unit
-    // TODO maybe deprecate this method in favor of putNextTo, which has less consistency constraints
 
     /**
      * Put the elements at one end of the container.
