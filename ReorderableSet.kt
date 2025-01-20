@@ -9,7 +9,7 @@
  * Unless otherwise specified, mutation methods generally ignore
  * whether the elements to insert are already in the container or not.
  */
-public interface ReorderableContainer<E>: Collection<E> {
+public interface ReorderableSet<E>: Set<E> {
     /**
      * Yields the elements of the container, in unspecified order.
      * May be a cheaper operation than iterating over the container,
@@ -76,7 +76,7 @@ public interface ReorderableContainer<E>: Collection<E> {
     fun removeAll(elements: Sequence<E>): Unit
 }
 
-abstract class AbstractReorderableContainer<E>: ReorderableContainer<E>, AbstractCollection<E>() {
+abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
     abstract protected fun update(pairs: Iterable<Pair<E, OrderBitField>>): Unit
 
     override abstract val sortKey: (E) -> OrderBitField
@@ -147,9 +147,9 @@ abstract class AbstractReorderableContainer<E>: ReorderableContainer<E>, Abstrac
     }
 }
 
-class MapBasedReorderableContainer<E>(
+class MapBasedReorderableSet<E>(
     vararg elements: E,
-): AbstractReorderableContainer<E>() {
+): AbstractReorderableSet<E>() {
     private val store: MutableMap<E, OrderBitField>
     init {
         if (elements.isEmpty()) {
@@ -160,7 +160,7 @@ class MapBasedReorderableContainer<E>(
         }
     }
 
-    // AbstractReorderableContainer method
+    // AbstractReorderableSet method
 
     override fun update(pairs: Iterable<Pair<E, OrderBitField>>) {
         store.putAll(pairs)
@@ -181,7 +181,7 @@ class MapBasedReorderableContainer<E>(
         return store.keys.sortedBy { store[it] }.iterator()
     }
 
-    // remaining ReorderableContainer methods
+    // remaining ReorderableSet methods
 
     override fun elements(): Iterable<E> {
         return store.keys
@@ -208,14 +208,14 @@ class MapBasedReorderableContainer<E>(
     }
 }
 
-class SetLambdaBasedReorderableContainer<E>(
+class SetLambdaBasedReorderableSet<E>(
     private val getCode: (E) -> OrderBitField,
     private val setCode: (E, OrderBitField) -> Unit,
     vararg elements: E,
-): AbstractReorderableContainer<E>() {
+): AbstractReorderableSet<E>() {
     private val store: MutableSet<E> = elements.toMutableSet()
 
-    // AbstractReorderableContainer method
+    // AbstractReorderableSet method
 
     override fun update(pairs: Iterable<Pair<E, OrderBitField>>) {
         pairs.forEach { (element, code) -> setCode(element, code) }
@@ -237,7 +237,7 @@ class SetLambdaBasedReorderableContainer<E>(
         return store.sortedBy { getCode(it) }.iterator()
     }
 
-    // ReorderableContainer methods
+    // ReorderableSet methods
 
     override fun elements(): Iterable<E> {
         return store
