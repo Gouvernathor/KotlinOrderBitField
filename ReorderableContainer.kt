@@ -65,15 +65,15 @@ public interface ReorderableContainer<E>: Collection<E> {
     fun popItems(n: Int, last: Boolean = true): Iterable<E>
 
     /**
-     * Remove the elements from the container.
-     * It is an error to provide any element which is not in the container.
+     * Remove the element from the container, and return whether it was in it.
      */
-    fun remove(vararg elements: E): Unit
+    fun remove(element: E): Boolean
 
     /**
-     * Remove the elements from the container, if they are in it.
+     * Remove the elements from the container.
      */
-    fun discard(vararg elements: E): Unit
+    fun removeAll(elements: Iterable<E>): Unit
+    fun removeAll(elements: Sequence<E>): Unit
 }
 
 abstract class AbstractReorderableContainer<E>: ReorderableContainer<E>, AbstractCollection<E>() {
@@ -131,7 +131,7 @@ abstract class AbstractReorderableContainer<E>: ReorderableContainer<E>, Abstrac
         } else {
             element = elements().minBy(sortKey)
         }
-        discard(element) // skip testing for presence
+        remove(element)
         return element
     }
 
@@ -142,7 +142,7 @@ abstract class AbstractReorderableContainer<E>: ReorderableContainer<E>, Abstrac
             elements().asSequence().sortedByDescending(sortKey) else
             elements().asSequence().sortedBy(sortKey)
         val rv = sortedSeq.take(toPop).toList()
-        rv.forEach { discard(it) } // no batch removal because it requires an array
+        removeAll(rv)
         return rv
     }
 }
@@ -196,16 +196,15 @@ class MapBasedReorderableContainer<E>(
         store.putAll(newMap)
     }
 
-    override fun remove(vararg elements: E) {
-        for (element in elements) {
-            store.remove(element) ?: throw IllegalArgumentException("element not in the container")
-        }
+    override fun remove(element: E): Boolean {
+        return store.remove(element) != null
     }
 
-    override fun discard(vararg elements: E) {
-        for (element in elements) {
-            store.remove(element)
-        }
+    override fun removeAll(elements: Iterable<E>) {
+        store.keys.removeAll(elements)
+    }
+    override fun removeAll(elements: Sequence<E>) {
+        store.keys.removeAll(elements)
     }
 }
 
@@ -251,15 +250,14 @@ class SetLambdaBasedReorderableContainer<E>(
         (this zip codes.toList()).forEach { (element, code) -> setCode(element, code) }
     }
 
-    override fun remove(vararg elements: E) {
-        for (element in elements) {
-            if (!store.remove(element)) throw IllegalArgumentException("element not in the container")
-        }
+    override fun remove(element: E): Boolean {
+        return store.remove(element)
     }
 
-    override fun discard(vararg elements: E) {
-        for (element in elements) {
-            store.remove(element)
-        }
+    override fun removeAll(elements: Iterable<E>) {
+        store.removeAll(elements)
+    }
+    override fun removeAll(elements: Sequence<E>) {
+        store.removeAll(elements)
     }
 }
