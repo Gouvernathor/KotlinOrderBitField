@@ -77,7 +77,7 @@ public interface ReorderableSet<E>: Set<E> {
 }
 
 abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
-    abstract protected fun update(pairs: Iterable<Pair<E, OrderBitField>>): Unit
+    abstract protected fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean = true): Unit
 
     override abstract val sortKey: (E) -> OrderBitField
 
@@ -121,7 +121,10 @@ abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
         update((newElements zip codes.toList()))
     }
 
-    // leave recompute to the subclasses
+    override fun recompute() {
+        val codes = OrderBitField.initial(size.toUInt())
+        update((this zip codes.toList()), false) // not elements(), which is unordered
+    }
 
     override fun popItem(last: Boolean): E {
         require(isNotEmpty()) { "the container is empty" }
@@ -162,7 +165,7 @@ class MapBasedReorderableSet<E>(
 
     // AbstractReorderableSet method
 
-    override fun update(pairs: Iterable<Pair<E, OrderBitField>>) {
+    override fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean) {
         store.putAll(pairs)
     }
 
@@ -189,13 +192,6 @@ class MapBasedReorderableSet<E>(
 
     override val sortKey: (E) -> OrderBitField = { store[it]!! }
 
-    override fun recompute() {
-        val codes = OrderBitField.initial(store.size.toUInt())
-        val newMap = (this zip codes.toList()).toMap() // not store.keys, which is unordered
-        store.clear()
-        store.putAll(newMap)
-    }
-
     override fun remove(element: E): Boolean {
         return store.remove(element) != null
     }
@@ -217,9 +213,11 @@ class SetLambdaBasedReorderableSet<E>(
 
     // AbstractReorderableSet method
 
-    override fun update(pairs: Iterable<Pair<E, OrderBitField>>) {
+    override fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean) {
         pairs.forEach { (element, code) -> setCode(element, code) }
-        store.addAll(pairs.map { it.first })
+        if (mayBeNew) {
+            store.addAll(pairs.map { it.first })
+        }
     }
 
     // Collection methods
@@ -244,11 +242,6 @@ class SetLambdaBasedReorderableSet<E>(
     }
 
     override val sortKey: (E) -> OrderBitField = getCode
-
-    override fun recompute() {
-        val codes = OrderBitField.initial(store.size.toUInt())
-        (this zip codes.toList()).forEach { (element, code) -> setCode(element, code) }
-    }
 
     override fun remove(element: E): Boolean {
         return store.remove(element)
