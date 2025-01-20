@@ -176,9 +176,11 @@ class MapBasedReorderableContainer<E>(vararg elements: E): ReorderableContainer<
 
     override fun popItems(n: Int, last: Boolean): Iterable<E> {
         val toPop = n.coerceAtMost(store.size)
-        val rang = if (last) (size downTo size-toPop-1) else (0..<toPop)
-        val thislist = this.toList() // sorted
-        val rv = rang.map { thislist[it] }
+        val sortedSeq = if (last)
+            // this is faster if Sequence::sortedBy is lazy-optimized
+            store.keys.asSequence().sortedByDescending(sortKey()) else
+            store.keys.asSequence().sortedBy(sortKey())
+        val rv = sortedSeq.take(toPop).toList()
         rv.forEach { store.remove(it) }
         return rv
     }
@@ -186,6 +188,123 @@ class MapBasedReorderableContainer<E>(vararg elements: E): ReorderableContainer<
     override fun remove(vararg elements: E) {
         for (element in elements) {
             store.remove(element) ?: throw IllegalArgumentException("element not in the container")
+        }
+    }
+
+    override fun discard(vararg elements: E) {
+        for (element in elements) {
+            store.remove(element)
+        }
+    }
+}
+
+class SetLambdaBasedReorderableContainer<E>(
+    private val getCode: (E) -> OrderBitField,
+    private val setCode: (E, OrderBitField) -> Unit,
+    vararg elements: E,
+): ReorderableContainer<E>, AbstractCollection<E>() {
+    private val store: MutableSet<E> = elements.toMutableSet()
+
+    // Collection methods
+
+    override val size: Int
+        get() = store.size
+
+    // overridden for performance
+    override fun contains(element: E): Boolean = store.contains(element)
+
+    // overridden for performance
+    override fun containsAll(elements: Collection<E>): Boolean = store.containsAll(elements)
+
+    operator override fun iterator(): Iterator<E> {
+        return store.sortedBy { getCode(it) }.iterator()
+    }
+
+    // ReorderableContainer methods
+
+    override fun elements(): Iterable<E> {
+        return store
+    }
+
+    override fun sortKey(): (E) -> OrderBitField {
+        return getCode
+    }
+
+    override fun putBetween(start: E, end: E, vararg newElements: E) {
+        require(start != end) { "start and end must be different" }
+        require(start in store) { "start must be in the container" }
+        require(end in store) { "end must be in the container" }
+        val codes = OrderBitField.between(getCode(start), getCode(end), newElements.size.toUInt()).toList()
+        (newElements zip codes).forEach { (element, code) -> setCode(element, code) }
+        store.addAll(newElements)
+    }
+
+    override fun putAtEnd(vararg newElements: E, last: Boolean) {
+        val codes: Sequence<OrderBitField>
+        if (store.isEmpty()) {
+            codes = OrderBitField.initial(newElements.size.toUInt())
+        } else if (last) {
+            codes = OrderBitField.after(store.map(getCode).max(), newElements.size.toUInt())
+        } else {
+            codes = OrderBitField.before(store.map(getCode).min(), newElements.size.toUInt())
+        }
+        (newElements zip codes.toList()).forEach { (element, code) -> setCode(element, code) }
+        store.addAll(newElements)
+    }
+
+    override fun putNextTo(anchor: E, vararg newElements: E, after: Boolean) {
+        require(anchor in store) { "anchor must be in the container" }
+        val anchorCode = getCode(anchor)
+        val codes: Sequence<OrderBitField>
+        if (after) {
+            val end = store.map(getCode).filter { it > anchorCode }.minOrNull()
+            if (end == null) {
+                codes = OrderBitField.after(anchorCode, newElements.size.toUInt())
+            } else {
+                codes = OrderBitField.between(anchorCode, end, newElements.size.toUInt())
+            }
+        } else {
+            val start = store.map(getCode).filter { it < anchorCode }.maxOrNull()
+            if (start == null) {
+                codes = OrderBitField.before(anchorCode, newElements.size.toUInt())
+            } else {
+                codes = OrderBitField.between(start, anchorCode, newElements.size.toUInt())
+            }
+        }
+        (newElements zip codes.toList()).forEach { (element, code) -> setCode(element, code) }
+        store.addAll(newElements)
+    }
+
+    override fun recompute() {
+        val codes = OrderBitField.initial(store.size.toUInt())
+        (this zip codes.toList()).forEach { (element, code) -> setCode(element, code) }
+    }
+
+    override fun popItem(last: Boolean): E {
+        require(store.isNotEmpty()) { "the container is empty" }
+        val element: E
+        if (last) {
+            element = store.maxByOrNull { getCode(it) }!!
+        } else {
+            element = store.minByOrNull { getCode(it) }!!
+        }
+        store.remove(element)
+        return element
+    }
+
+    override fun popItems(n: Int, last: Boolean): Iterable<E> {
+        val toPop = n.coerceAtMost(store.size)
+        val sortedSeq = if (last)
+            store.asSequence().sortedByDescending(sortKey()) else
+            store.asSequence().sortedBy(sortKey())
+        val rv = sortedSeq.take(toPop).toList()
+        store.removeAll(rv)
+        return rv
+    }
+
+    override fun remove(vararg elements: E) {
+        for (element in elements) {
+            if (!store.remove(element)) throw IllegalArgumentException("element not in the container")
         }
     }
 
