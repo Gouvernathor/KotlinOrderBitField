@@ -99,13 +99,17 @@ abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
     }
 
     override fun putAtEnd(vararg newElements: E, last: Boolean) {
+        // codes that will not be changed by this operation
+        val unmovedCodes = elements().filter { it !in newElements }.map(sortKey)
+
         val codes: Sequence<OrderBitField>
-        if (isEmpty()) {
-            codes = OrderBitField.initial(newElements.size.toUInt())
+        val nCodes = newElements.size.toUInt()
+        if (unmovedCodes.isEmpty()) {
+            codes = OrderBitField.initial(nCodes)
         } else if (last) {
-            codes = OrderBitField.after(elements().maxOf(sortKey), newElements.size.toUInt())
+            codes = OrderBitField.after(unmovedCodes.max(), nCodes)
         } else {
-            codes = OrderBitField.before(elements().minOf(sortKey), newElements.size.toUInt())
+            codes = OrderBitField.before(unmovedCodes.min(), nCodes)
         }
         update((newElements zip codes.toList()))
     }
