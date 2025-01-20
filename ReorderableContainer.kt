@@ -83,8 +83,8 @@ abstract class AbstractReorderableContainer<E>: ReorderableContainer<E>, Abstrac
 
     override fun putBetween(start: E, end: E, vararg newElements: E) {
         require(start != end) { "start and end must be different" }
-        val codes = OrderBitField.between(sortKey(start), sortKey(end), newElements.size.toUInt()).toList()
-        update((newElements zip codes))
+        val codes = OrderBitField.between(sortKey(start), sortKey(end), newElements.size.toUInt())
+        update((newElements zip codes.toList()))
     }
 
     override fun putAtEnd(vararg newElements: E, last: Boolean) {
