@@ -40,6 +40,20 @@ public class OrderBitField protected constructor(code: Code, val maxSize: UInt?)
         fun after(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
             yieldAll(generateCodes(n, other, null, EMPTY_CODE).map { OrderBitField(it, maxSize) })
         }
+
+        /**
+         * Multi-purpose version of the 4 functions above, pass null to remove a boundary.
+         */
+        fun generate(start: OrderBitField?, end: OrderBitField?, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
+            val prefix: Code
+            if (start != null && end != null) {
+                require(start < end) { "start must be less than end" }
+                prefix = commonPrefix(start, end)
+            } else {
+                prefix = EMPTY_CODE
+            }
+            yieldAll(generateCodes(n, start ?: EMPTY_CODE, end, prefix).map { OrderBitField(it, maxSize) })
+        }
     }
 
     override fun compareTo(other: OrderBitField): Int {
