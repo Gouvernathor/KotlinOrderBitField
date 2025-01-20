@@ -41,8 +41,8 @@ public interface ReorderableSet<E>: Set<E> {
 
     /**
      * Put the elements next to the given anchor element.
-     * It is an error to provide an element which is not in the container.
-     * It is unspecified and at the very least unoptimized to include the anchor element in the new elements.
+     * It is an error to provide an anchor element which is not in the container.
+     * Including the anchor element in the new elements is allowed, however.
      */
     fun putNextTo(anchor: E, vararg newElements: E, after: Boolean = true): Unit
 
@@ -112,22 +112,52 @@ abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
 
     override fun putNextTo(anchor: E, vararg newElements: E, after: Boolean) {
         require(anchor in this) { "anchor must be in the container" }
-        val anchorCode = sortKey(anchor)
-        val codes: Sequence<OrderBitField>
-        if (after) {
-            val end = elements().map(sortKey).filter { it > anchorCode }.minOrNull()
-            if (end == null) {
-                codes = OrderBitField.after(anchorCode, newElements.size.toUInt())
+
+        // codes that will not be changed by this operation
+        val unmovedCodes = elements().filter { it !in newElements }.map(sortKey)
+
+        // reference code, from which neighbors are
+        val anchorTrueCode = sortKey(anchor)
+
+        // the two halves of the unmoved codes (lazy because the two won't necessarily be used)
+        val unmovedCodesBefore = unmovedCodes.asSequence().filter { it < anchorTrueCode }
+        val unmovedCodesAfter = unmovedCodes.asSequence().filter { anchorTrueCode < it }
+
+        // one of the codes, that will be used as the boundary on the side of the anchor
+        // in case the anchor is a part of the new elements
+        val anchorCode: OrderBitField?
+        if (anchor in newElements) {
+            if (after) {
+                anchorCode = unmovedCodesBefore.maxOrNull()
             } else {
-                codes = OrderBitField.between(anchorCode, end, newElements.size.toUInt())
+                anchorCode = unmovedCodesAfter.minOrNull()
             }
         } else {
-            val start = elements().map(sortKey).filter { it < anchorCode }.maxOrNull()
-            if (start == null) {
-                codes = OrderBitField.before(anchorCode, newElements.size.toUInt())
+            anchorCode = anchorTrueCode
+        }
+        // the actual boundary codes
+        val start: OrderBitField?
+        val end: OrderBitField?
+        if (after) {
+            start = anchorCode
+            end = unmovedCodesAfter.minOrNull()
+        } else {
+            start = unmovedCodesBefore.maxOrNull()
+            end = anchorCode
+        }
+        // the new codes
+        val codes: Sequence<OrderBitField>
+        val nCodes = newElements.size.toUInt()
+        if (start == null) {
+            if (end == null) {
+                codes = OrderBitField.initial(nCodes)
             } else {
-                codes = OrderBitField.between(start, anchorCode, newElements.size.toUInt())
+                codes = OrderBitField.before(end, nCodes)
             }
+        } else if (end == null) {
+            codes = OrderBitField.after(start, nCodes)
+        } else {
+            codes = OrderBitField.between(start, end, nCodes)
         }
         update((newElements zip codes.toList()))
     }
