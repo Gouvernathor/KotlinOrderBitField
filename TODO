@@ -1,0 +1,8 @@
+- add (adapt) the tests, all the tests
+- add ways to adapt to and from Byte[] in Java (or at least indirectly from and to BINARY and VARBINARY)
+  - in any case, be mindful about the fact that Byte is signed, and Char is 16-bit, so test conversions of values 128..255
+- export to JS and test in the field
+- add readme and explanations for:
+  - how to use OBF as a field of a class, to sort built-in containers of that type
+  - how to use the provided container type
+  - how to convert to and from a database
