@@ -2,7 +2,8 @@
  * Like a set, elements are unique.
  * Elements are not sorted.
  * Like a list, elements are ordered.
- * Unlike a list, elements' indices are not contiguous, and opaque (you can't find an element by its index).
+ * Unlike a list, elements are not indexed.
+ * Technically they are, but their indices are not contiguous, and opaque (you can't find an element by its index).
  * Unlike any mutable collection, you can't insert an element without specifying where to insert it relative to the existing elements.
  * The container is mutable in two ways: you can add and remove elements, and you can also efficiently reorder them.
  *
@@ -91,6 +92,10 @@ abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
     abstract protected fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean = true): Unit
 
     override abstract val sortKey: (E) -> OrderBitField
+
+    operator override fun iterator(): Iterator<E> {
+        return elements().asSequence().sortedBy(sortKey).iterator()
+    }
 
     override fun putBetween(start: E, end: E, vararg newElements: E) {
         require(start != end) { "start and end must be different" }
@@ -255,10 +260,6 @@ class MapBasedReorderableSet<E>(
     // overridden for performance
     override fun containsAll(elements: Collection<E>): Boolean = store.keys.containsAll(elements)
 
-    operator override fun iterator(): Iterator<E> {
-        return store.keys.sortedBy { store[it] }.iterator()
-    }
-
     // remaining ReorderableSet methods
 
     override fun elements(): Iterable<E> {
@@ -305,10 +306,6 @@ class SetLambdaBasedReorderableSet<E>(
 
     // overridden for performance
     override fun containsAll(elements: Collection<E>): Boolean = store.containsAll(elements)
-
-    operator override fun iterator(): Iterator<E> {
-        return store.sortedBy { getCode(it) }.iterator()
-    }
 
     // ReorderableSet methods
 
