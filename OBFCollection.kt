@@ -15,9 +15,9 @@ public interface ReorderableContainer<E>: Collection<E> {
     fun elements(): Iterable<E>
 
     /**
-     * Extracts a key function, to be passed in the sortedBy function.
+     * A key function, to be passed in the sortedBy function.
      */
-    fun sortKey(): (E) -> Comparable<*>
+    val sortKey: (E) -> Comparable<*>
 
     /**
      * Put the elements between the stard and end elements.
@@ -106,9 +106,7 @@ class MapBasedReorderableContainer<E>(vararg elements: E): ReorderableContainer<
         return store.keys
     }
 
-    override fun sortKey(): (E) -> OrderBitField {
-        return { store[it]!! }
-    }
+    override val sortKey: (E) -> OrderBitField = { store[it]!! }
 
     override fun putBetween(start: E, end: E, vararg newElements: E) {
         require(start != end) { "start and end must be different" }
@@ -178,8 +176,8 @@ class MapBasedReorderableContainer<E>(vararg elements: E): ReorderableContainer<
         val toPop = n.coerceAtMost(store.size)
         val sortedSeq = if (last)
             // this is faster if Sequence::sortedBy is lazy-optimized
-            store.keys.asSequence().sortedByDescending(sortKey()) else
-            store.keys.asSequence().sortedBy(sortKey())
+            store.keys.asSequence().sortedByDescending(sortKey) else
+            store.keys.asSequence().sortedBy(sortKey)
         val rv = sortedSeq.take(toPop).toList()
         rv.forEach { store.remove(it) }
         return rv
@@ -226,9 +224,7 @@ class SetLambdaBasedReorderableContainer<E>(
         return store
     }
 
-    override fun sortKey(): (E) -> OrderBitField {
-        return getCode
-    }
+    override val sortKey: (E) -> OrderBitField = getCode
 
     override fun putBetween(start: E, end: E, vararg newElements: E) {
         require(start != end) { "start and end must be different" }
@@ -295,8 +291,8 @@ class SetLambdaBasedReorderableContainer<E>(
     override fun popItems(n: Int, last: Boolean): Iterable<E> {
         val toPop = n.coerceAtMost(store.size)
         val sortedSeq = if (last)
-            store.asSequence().sortedByDescending(sortKey()) else
-            store.asSequence().sortedBy(sortKey())
+            store.asSequence().sortedByDescending(sortKey) else
+            store.asSequence().sortedBy(sortKey)
         val rv = sortedSeq.take(toPop).toList()
         store.removeAll(rv)
         return rv
