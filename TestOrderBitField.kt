@@ -19,15 +19,6 @@ private operator fun Code.compareTo(other: Code): Int {
     }
     return size.compareTo(other.size)
 }
-@ExperimentalUnsignedTypes
-private operator fun Code.compareTo(other: UByteArray): Int {
-    val n = size.coerceAtMost(other.size)
-    for (i in 0 until n) {
-        val diff = this[i].compareTo(other[i])
-        if (diff != 0) return diff
-    }
-    return size.compareTo(other.size)
-}
 
 private infix fun Int.pow(exponent: UInt): Int {
     var rv = 1
@@ -72,12 +63,13 @@ class TestOrderBitField(randomKey: Int? = null) {
             if (buf[codesize-1] == ZERO_UBYTE) {
                 buf[codesize-1] = random.nextUInt(1u, 256u).toUByte()
             }
+            val cn = buf.toList()
             // have the two codes ordered
-            if (c < buf) {
+            if (c < cn) {
                 c1 = c
-                c2 = buf.toList()
+                c2 = cn
             } else {
-                c1 = buf.toList()
+                c1 = cn
                 c2 = c
             }
         }
@@ -99,10 +91,10 @@ class TestOrderBitField(randomKey: Int? = null) {
 
     @Test
     fun testLimitValues() {
-        OrderBitField.generate(null, null, 1).toList()
-        OrderBitField.generate(emptyList(), null, 1).toList()
-        OrderBitField.generate(null, emptyList(), 1).toList()
-        OrderBitField.generate(emptyList(), emptyList(), 1).toList()
+        OrderBitField.generate(null, null, 1u).toList()
+        OrderBitField.generate(emptyList(), null, 1u).toList()
+        OrderBitField.generate(null, emptyList(), 1u).toList()
+        OrderBitField.generate(emptyList(), emptyList(), 1u).toList()
     }
 
     @Test
