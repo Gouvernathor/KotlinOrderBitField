@@ -8,6 +8,8 @@ import kotlin.test.assertTrue
 import kotlin.test.Test
 import kotlin.collections.listOf
 import kotlin.collections.dropLast
+import kotlin.math.ceil
+import kotlin.math.log
 
 private operator fun Code.compareTo(other: Code): Int {
     val n = size.coerceAtMost(other.size)
@@ -128,6 +130,49 @@ class TestOrderBitField(randomKey: Int? = null) {
         codes.forEach { assertTrue(it.size <= codesize+1) }
     }
 
+    /**
+     * Tests successively adding elements after one another.
+     * The expected limit, without intermediary recomputes,
+     * is of 7 or 8 times the max number of digits in a code.
+     * Why 7 or 8 ? because 2**7 < 2**8 = 256 < 2**9
+     * (with 256 possible values for a UByte)
+     * so 7 or 8 is the number of insertions (here the number of loops)
+     * after which the code takes a new digit, supposing that
+     * each code gets at the midpoint of the remaining range.
+     * floor(log2(256)) = 7?8?
+     */
+    @Test
+    fun testMaxNumberOfSuccessiveCallsAndRecompute() {
+        var lastCode: Code = emptyList()
+        val codes = mutableSetOf(lastCode)
+        val maxCodeSize = 5
+
+        for (i in 0 until 7*maxCodeSize) {
+            lastCode = parameterizedExecution(1, lastCode, null)[0]
+            assertTrue(codes.add(lastCode))
+        }
+
+        // TODO test that when calling recompute,
+        // the number of codes returned is the same,
+        // and the returned codes are at maximum compactness
+    }
+
+    @Test
+    fun testDoublesInRecompute() {
+        val nCodes = 10
+        val codesLarge = parameterizedExecution(nCodes, emptyList(), null)
+        val codesDoubled = parameterizedExecution(nCodes, codesLarge[nCodes/2], codesLarge[nCodes/2+1])
+        val codes = codesLarge + codesDoubled + codesDoubled
+
+        assertEquals(3*nCodes, codes.size)
+        assertEquals(2*nCodes, setOf(codes).size)
+
+        // TODO make a new container whose elements' codes are those in codes
+        // call recompute
+        // test that the container's size is still 3*nCodes, and that its number of distinct codes is also 3*nCodes
+        // TODO also decide whether that's the intended behavior or not
+    }
+
     private fun parameterizedExecution(nCodesTest: Int, boundMin: Code, boundMax: Code?): List<Code> {
         // if this check doesn't pass, the caller test has an error
         assertTrue((boundMax == null) || boundMin < boundMax)
@@ -156,5 +201,12 @@ class TestOrderBitField(randomKey: Int? = null) {
         assertTrue(codes.none { it.last() == ZERO_UBYTE })
 
         return codes
+    }
+
+    private fun testMaxCompactness(codes: Collection<Code>) {
+        val maxCodeSize = codes
+            .map { it.size }
+            .maxOrNull() ?: 0
+        assertTrue(maxCodeSize <= ceil(log(codes.size.toFloat(), 256f)))
     }
 }
