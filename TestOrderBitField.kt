@@ -169,7 +169,7 @@ class TestOrderBitField(randomKey: Int? = null) {
         // if this check doesn't pass, the caller test has an error
         assertTrue((boundMax == null) || boundMin < boundMax)
 
-        val codes: List<Code> = OrderBitField.generate(boundMin, boundMax, nCodesTest).toList()
+        val codes: List<Code> = OrderBitField.generate(boundMin, boundMax, nCodesTest.toUInt()).toList()
 
         // check the number of codes
         assertEquals(nCodesTest, codes.size)
