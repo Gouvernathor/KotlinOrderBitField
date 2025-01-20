@@ -51,6 +51,11 @@ public interface ReorderableSet<E>: Set<E> {
      */
     fun recompute(): Unit
 
+    fun <R : Comparable<R>> sortBy(selector: (E) -> R): Unit
+    fun sortWith(comparator: Comparator<in E>): Unit
+    fun <R : Comparable<R>> sortTrancheBy(start: E?, end: E?, selector: (E) -> R): Unit
+    fun sortTrancheWith(start: E?, end: E?, comparator: Comparator<in E>): Unit
+
     /**
      * Remove and return the last or first element of the container.
      * It is an error to call this method on an empty container.
@@ -74,6 +79,12 @@ public interface ReorderableSet<E>: Set<E> {
      */
     fun removeAll(elements: Iterable<E>): Unit
     fun removeAll(elements: Sequence<E>): Unit
+}
+fun <E : Comparable<E>> AbstractReorderableSet<E>.sort() {
+    this.sortBy({ it })
+}
+fun <E : Comparable<E>> AbstractReorderableSet<E>.sortTranche(start: E?, end: E?) {
+    this.sortTrancheBy(start, end, { it })
 }
 
 abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
@@ -121,9 +132,39 @@ abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
         update((newElements zip codes.toList()))
     }
 
+    /**
+     * Recompute the indices of these elements in this order.
+     * Not public because passing non-consecutive elements to this function
+     * yields unspecified ordering with the intermingled elements.
+     */
+    private fun partialRecompute(elements: Collection<E>) {
+        val codes = OrderBitField.initial(elements.size.toUInt())
+        update((elements zip codes.toList()), false)
+    }
     override fun recompute() {
-        val codes = OrderBitField.initial(size.toUInt())
-        update((this zip codes.toList()), false) // not elements(), which is unordered
+        partialRecompute(this) // not elements(), which is unordered
+    }
+    override fun <R : Comparable<R>> sortBy(selector: (E) -> R) {
+        partialRecompute(this.sortedBy(selector)) // not elements() so that the sort is stable
+    }
+    override fun sortWith(comparator: Comparator<in E>) {
+        partialRecompute(this.sortedWith(comparator)) // same
+    }
+    private fun getTranche(start: E?, end: E?): Iterable<E> {
+        val startCode = if (start == null) null else sortKey(start)
+        val endCode = if (end == null) null else sortKey(end)
+        return this.filter { // not elements() so that the later sort is stable
+            val code = sortKey(it)
+            (startCode == null || startCode < code) && (endCode == null || code < endCode)
+        }
+    }
+    override fun <R : Comparable<R>> sortTrancheBy(start: E?, end: E?, selector: (E) -> R) {
+        val tranche = getTranche(start, end).sortedBy(selector)
+        partialRecompute(tranche)
+    }
+    override fun sortTrancheWith(start: E?, end: E?, comparator: Comparator<in E>) {
+        val tranche = getTranche(start, end).sortedWith(comparator)
+        partialRecompute(tranche)
     }
 
     override fun popItem(last: Boolean): E {
