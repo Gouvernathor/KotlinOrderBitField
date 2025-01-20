@@ -27,6 +27,14 @@ private operator fun Code.compareTo(other: UByteArray): Int {
     return size.compareTo(other.size)
 }
 
+private infix fun Int.pow(exponent: UInt): Int {
+    var rv = 1
+    for (i in 0u until exponent) {
+        rv *= this
+    }
+    return rv
+}
+
 val ZERO_UBYTE = 0u.toUByte()
 
 class TestOrderBitField(randomKey: Int? = null) {
@@ -85,6 +93,39 @@ class TestOrderBitField(randomKey: Int? = null) {
         parameterizedExecution(nCodesTest,
             c1.dropLast(1)+c1,
             c1.dropLast(1)+c2)
+    }
+
+    @Test
+    fun testLimitValues() {
+        OrderBitField.generate(null, null, 1).toList()
+        OrderBitField.generate(emptyList(), null, 1).toList()
+        OrderBitField.generate(null, emptyList(), 1).toList()
+        OrderBitField.generate(emptyList(), emptyList(), 1).toList()
+    }
+
+    @Test
+    fun testCompactness() {
+        var codes: List<Code>
+
+        // Test that for two consecutive UBytes :
+        val digMin = random.nextInt(255).toUByte()
+        val digMax = (digMin+1u).toUByte()
+        // * for 1 requested code, it gets no longer than 2 digits long
+        codes = parameterizedExecution(1, listOf(digMin), listOf(digMax))
+        assertEquals(2, codes[0].size)
+        // * for 255 requested codes, none gets longer than 2 digits long
+        codes = parameterizedExecution(255, listOf(digMin), listOf(digMax))
+        codes.forEach { assertEquals(2, it.size) }
+
+        // Idem with more depth
+        // adjust the code size to have a reasonable processing time
+        val codesize = 3
+        val nCodesTest = (256 pow codesize.toUInt()) - 1
+        // around 16 millions
+        codes = parameterizedExecution(nCodesTest, emptyList(), null)
+        codes.forEach { assertTrue(it.size <= codesize) }
+        codes = parameterizedExecution(nCodesTest, listOf(digMin), listOf(digMax))
+        codes.forEach { assertTrue(it.size <= codesize+1) }
     }
 
     private fun parameterizedExecution(nCodesTest: Int, boundMin: Code, boundMax: Code?): List<Code> {
