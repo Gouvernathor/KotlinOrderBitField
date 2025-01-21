@@ -81,14 +81,46 @@ public interface ReorderableSet<E>: Set<E> {
     fun removeAll(elements: Iterable<E>): Unit
     fun removeAll(elements: Sequence<E>): Unit
 }
-fun <E : Comparable<E>> AbstractReorderableSet<E>.sort() {
+fun <E : Comparable<E>> ReorderableSet<E>.sort() {
     this.sortBy({ it })
 }
-fun <E : Comparable<E>> AbstractReorderableSet<E>.sortTranche(start: E?, end: E?) {
+fun <E : Comparable<E>> ReorderableSet<E>.sortTranche(start: E?, end: E?) {
     this.sortTrancheBy(start, end, { it })
 }
 
-abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
+/**
+ * Create a new ReorderableSet with the given elements.
+ * Use this if you don't intend to manipulate OrderBitField indexes,
+ * and if the elements don't contain them in their structure.
+ */
+public fun <E> reorderableSetOf(vararg elements: E): ReorderableSet<E> {
+    return MapBasedReorderableSet(*elements)
+}
+/**
+ * Create a new ReorderableSet with the given elements.
+ * Use this if you intend to manipulate OrderBitField indexes,
+ * for instance if you need to save them or store them in a database,
+ * or if the elements contain their own OrderBitField indexes as part of their structure.
+ *
+ * In that latter case, assuming the property is called "idx",
+ * you can use `reorderableSetOf({ it.idx }, { e, c -> e.idx = c }, ...elements)`.
+ *
+ * In any case, only the container should ever be tampering with the OrderBitField indexes.
+ *
+ * Before passing them to this construction function, if you need to initialize the OrderBitField property,
+ * you can set it to null or to the empty list ; the getter function will still be safe to call
+ * because the constructor and any method will call the setter (with a non-null value) on any incoming element before ever calling the getter.
+ */
+public fun <E> reorderableSetOf(getCode: (E) -> OrderBitField, setCode: (E, OrderBitField) -> Unit, vararg elements: E): ReorderableSet<E> {
+    return SetLambdaBasedReorderableSet(getCode, setCode, *elements)
+}
+
+// TODO provide extension constructors (toReorderableSet) for Iterable, Sequence and Array
+// which requires changing the constructors of the classes to take an Iterable instead of vararg
+
+// TODO provide a way to manually provide the OrderBitField indexes without them being recomputed ?
+
+internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
     abstract protected fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean = true): Unit
 
     override abstract val sortKey: (E) -> OrderBitField
@@ -230,7 +262,7 @@ abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
     }
 }
 
-class MapBasedReorderableSet<E>(
+internal class MapBasedReorderableSet<E>(
     vararg elements: E,
 ): AbstractReorderableSet<E>() {
     private val store: MutableMap<E, OrderBitField>
@@ -280,7 +312,7 @@ class MapBasedReorderableSet<E>(
     }
 }
 
-class SetLambdaBasedReorderableSet<E>(
+internal class SetLambdaBasedReorderableSet<E>(
     private val getCode: (E) -> OrderBitField,
     private val setCode: (E, OrderBitField) -> Unit,
     vararg elements: E,
