@@ -1,3 +1,5 @@
+package fr.gouvernathor.orderbitfield
+
 import kotlin.random.Random
 import kotlin.random.nextUBytes
 import kotlin.random.nextUInt

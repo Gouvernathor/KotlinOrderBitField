@@ -1,13 +1,15 @@
-typealias Code = List<UByte>
+package fr.gouvernathor.orderbitfield
 
-val MAX_BYTE = UByte.Companion.MAX_VALUE
-val TOP_VALUE = MAX_BYTE + 1u
-val MAGIC_MIDDLE = (TOP_VALUE / 2u).toUByte()
+public typealias Code = List<UByte>
+
+private val MAX_BYTE = UByte.Companion.MAX_VALUE
+private val TOP_VALUE = MAX_BYTE + 1u
+private val MAGIC_MIDDLE = (TOP_VALUE / 2u).toUByte()
 
 /**
  * Requires s1 and s2 to be ordered, in that order.
  */
-public fun commonPrefix(s1: Code, s2: Code): Code {
+internal fun commonPrefix(s1: Code, s2: Code): Code {
     for ((i, c) in s1.withIndex()) {
         if (c != s2[i]) {
             return s1.drop(i)
@@ -21,7 +23,7 @@ public fun commonPrefix(s1: Code, s2: Code): Code {
  * codeStart may be empty but not null,
  * codeEnd may be null but not empty.
  */
-public fun generateCodes(
+internal fun generateCodes(
     nCodes: UInt,
     codeStart: Code,
     codeEnd: Code?,
@@ -124,7 +126,7 @@ public fun generateCodes(
  * Spreads nCodes codes among the mn to mx digits inclusive,
  * with a ponderation for each index.
  */
-fun ponderatedDistributeIndices(
+private fun ponderatedDistributeIndices(
     nCodes: UInt,
     mn: UByte, mx: UByte,
     ponderation: Map<UByte, UInt>,
@@ -162,7 +164,7 @@ fun ponderatedDistributeIndices(
  * Otherwise, one code is placed at the middle digit rounded down,
  * and the others are spread recursively among the remaining digits.
  */
-fun simpleDistributeIndices(
+private fun simpleDistributeIndices(
     nCodes: UInt,
     mn: UByte, mx: UByte,
 ): Sequence<UByte> = sequence {

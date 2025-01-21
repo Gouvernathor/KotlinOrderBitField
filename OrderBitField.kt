@@ -1,4 +1,6 @@
-val EMPTY_CODE: Code = emptyList()
+package fr.gouvernathor.orderbitfield
+
+internal val EMPTY_CODE: Code = emptyList()
 
 /**
  * Represents the ordering index of a value with respect to other similarly indexed values.
@@ -65,7 +67,7 @@ public class OrderBitField protected constructor(code: Code, val maxSize: UInt?)
         }
     }
 
-    override fun compareTo(other: OrderBitField): Int {
+    override operator fun compareTo(other: OrderBitField): Int {
         val n = size.coerceAtMost(other.size)
         for (i in 0..<n) {
             val diff = this[i].compareTo(other[i])
