@@ -105,14 +105,18 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         partialRecompute(this.sortedWith(comparator)) // same
     }
     private fun getTranche(start: E?, end: E?): Iterable<E> {
-        val startCode = if (start == null) null else sortKey(start)
-        val endCode = if (end == null) null else sortKey(end)
+        // keep the coming sort stable, and avoid filtering twice
         var tranche: Iterable<E> = this
-        // more efficient than .filter when it's already sorted
-        if (startCode != null) {
-            tranche = tranche.dropWhile { startCode < sortKey(it) }
+        if (start == null) {
+            if (end == null) {
+                return this
+            }
+        } else {
+            val startCode = sortKey(start)
+            tranche = tranche.dropWhile { startCode <= sortKey(it) }
         }
-        if (endCode != null) {
+        if (end != null) {
+            val endCode = sortKey(end)
             tranche = tranche.takeWhile { sortKey(it) < endCode }
         }
         return tranche
