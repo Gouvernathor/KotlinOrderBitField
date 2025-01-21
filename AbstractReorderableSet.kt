@@ -1,7 +1,10 @@
 package fr.gouvernathor.orderbitfield
 
 internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
-    abstract protected fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean = true): Unit
+    abstract protected fun update(
+        pairs: Iterable<Pair<E, OrderBitField>>,
+        mayBeNew: Boolean = true,
+    ): Unit
 
     override abstract val sortKey: (E) -> OrderBitField
 

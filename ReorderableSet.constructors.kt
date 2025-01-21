@@ -23,7 +23,11 @@ public fun <E> reorderableSetOf(vararg elements: E): ReorderableSet<E> {
  * you can set it to null or to the empty list ; the getter function will still be safe to call
  * because the constructor and any method will call the setter (with a non-null value) on any incoming element before ever calling the getter.
  */
-public fun <E> reorderableSetOf(getCode: (E) -> OrderBitField, setCode: (E, OrderBitField) -> Unit, vararg elements: E): ReorderableSet<E> {
+public fun <E> reorderableSetOf(
+    getCode: (E) -> OrderBitField,
+    setCode: (E, OrderBitField) -> Unit,
+    vararg elements: E,
+): ReorderableSet<E> {
     return SetLambdaBasedReorderableSet(getCode, setCode, elements.toList())
 }
 
@@ -41,13 +45,22 @@ public fun <E> Array<E>.toReorderableSet(): ReorderableSet<E> {
     return MapBasedReorderableSet(this.toList())
 }
 
-public fun <E> Iterable<E>.toReorderableSet(getCode: (E) -> OrderBitField, setCode: (E, OrderBitField) -> Unit): ReorderableSet<E> {
+public fun <E> Iterable<E>.toReorderableSet(
+    getCode: (E) -> OrderBitField,
+    setCode: (E, OrderBitField) -> Unit,
+): ReorderableSet<E> {
     return SetLambdaBasedReorderableSet(getCode, setCode, this)
 }
-public fun <E> Sequence<E>.toReorderableSet(getCode: (E) -> OrderBitField, setCode: (E, OrderBitField) -> Unit): ReorderableSet<E> {
+public fun <E> Sequence<E>.toReorderableSet(
+    getCode: (E) -> OrderBitField,
+    setCode: (E, OrderBitField) -> Unit,
+): ReorderableSet<E> {
     return SetLambdaBasedReorderableSet(getCode, setCode, this.toList())
 }
-public fun <E> Array<E>.toReorderableSet(getCode: (E) -> OrderBitField, setCode: (E, OrderBitField) -> Unit): ReorderableSet<E> {
+public fun <E> Array<E>.toReorderableSet(
+    getCode: (E) -> OrderBitField,
+    setCode: (E, OrderBitField) -> Unit,
+): ReorderableSet<E> {
     return SetLambdaBasedReorderableSet(getCode, setCode, this.toList())
 }
 
