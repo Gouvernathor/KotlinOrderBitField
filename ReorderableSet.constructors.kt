@@ -27,6 +27,28 @@ public fun <E> reorderableSetOf(getCode: (E) -> OrderBitField, setCode: (E, Orde
     return SetLambdaBasedReorderableSet(getCode, setCode, elements.toList())
 }
 
-// TODO provide extension constructors (toReorderableSet) for Iterable, Sequence and Array
+// avoid converting to List if already a Collection
+public fun <E> Collection<E>.toReorderableSet(): ReorderableSet<E> {
+    return MapBasedReorderableSet(this)
+}
+public fun <E> Iterable<E>.toReorderableSet(): ReorderableSet<E> {
+    return MapBasedReorderableSet(this.toList())
+}
+public fun <E> Sequence<E>.toReorderableSet(): ReorderableSet<E> {
+    return MapBasedReorderableSet(this.toList())
+}
+public fun <E> Array<E>.toReorderableSet(): ReorderableSet<E> {
+    return MapBasedReorderableSet(this.toList())
+}
+
+public fun <E> Iterable<E>.toReorderableSet(getCode: (E) -> OrderBitField, setCode: (E, OrderBitField) -> Unit): ReorderableSet<E> {
+    return SetLambdaBasedReorderableSet(getCode, setCode, this)
+}
+public fun <E> Sequence<E>.toReorderableSet(getCode: (E) -> OrderBitField, setCode: (E, OrderBitField) -> Unit): ReorderableSet<E> {
+    return SetLambdaBasedReorderableSet(getCode, setCode, this.toList())
+}
+public fun <E> Array<E>.toReorderableSet(getCode: (E) -> OrderBitField, setCode: (E, OrderBitField) -> Unit): ReorderableSet<E> {
+    return SetLambdaBasedReorderableSet(getCode, setCode, this.toList())
+}
 
 // TODO provide a way to manually provide the OrderBitField indexes without them being recomputed ?
