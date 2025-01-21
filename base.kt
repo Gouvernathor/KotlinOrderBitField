@@ -51,7 +51,7 @@ internal fun generateCodes(
 
         if (nDirectCandidates == nCodes) {
             // no need to arrange
-            direct = ((startDigit1 + 1u).toUByte()..endDigit1).toSet() as Collection<UByte> // see which is correct
+            direct = ((startDigit1 + 1u).toUByte()..endDigit1).map { it.toUByte() }
         } else {
             direct = simpleDistributeIndices(nCodes, (startDigit1 + 1u).toUByte(), endDigit1).toSet()
         }
@@ -60,7 +60,7 @@ internal fun generateCodes(
     } else {
         // there are too many codes to be generated for direct codes to be enough
         // we take all available direct codes
-        direct = ((startDigit1 + 1u).toUByte()..endDigit1).map { it.toUByte() } // see which is correct
+        direct = ((startDigit1 + 1u).toUByte()..endDigit1).map { it.toUByte() }
 
         // distributing longer codes among the digits by which they will begin
         // interval of those starting digits : [[startDigit1, endDigit1]]
