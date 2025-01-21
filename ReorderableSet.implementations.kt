@@ -1,7 +1,7 @@
 package fr.gouvernathor.orderbitfield
 
 internal class MapBasedReorderableSet<E>(
-    vararg elements: E,
+    elements: Collection<E>,
 ): AbstractReorderableSet<E>() {
     private val store: MutableMap<E, OrderBitField>
     init {
@@ -12,6 +12,10 @@ internal class MapBasedReorderableSet<E>(
             store = (elements zip codes).toMap().toMutableMap()
         }
     }
+
+    // constructor(elements: Iterable<E>): this(elements.toList())
+    // constructor(elements: Sequence<E>): this(elements.toList())
+    // constructor(elements: Array<E>): this(elements.toList())
 
     // AbstractReorderableSet method
 
@@ -53,9 +57,20 @@ internal class MapBasedReorderableSet<E>(
 internal class SetLambdaBasedReorderableSet<E>(
     private val getCode: (E) -> OrderBitField,
     private val setCode: (E, OrderBitField) -> Unit,
-    vararg elements: E,
+    elements: Iterable<E>,
 ): AbstractReorderableSet<E>() {
     private val store: MutableSet<E> = elements.toMutableSet()
+
+    // constructor(
+    //     getCode: (E) -> OrderBitField,
+    //     setCode: (E, OrderBitField) -> Unit,
+    //     elements: Sequence<E>,
+    // ): this(getCode, setCode, elements.toList())
+    // constructor(
+    //     getCode: (E) -> OrderBitField,
+    //     setCode: (E, OrderBitField) -> Unit,
+    //     elements: Array<E>,
+    // ): this(getCode, setCode, elements.toList())
 
     // AbstractReorderableSet method
 

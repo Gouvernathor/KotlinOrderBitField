@@ -6,7 +6,7 @@ package fr.gouvernathor.orderbitfield
  * and if the elements don't contain them in their structure.
  */
 public fun <E> reorderableSetOf(vararg elements: E): ReorderableSet<E> {
-    return MapBasedReorderableSet(*elements)
+    return MapBasedReorderableSet(elements.toList())
 }
 /**
  * Create a new ReorderableSet with the given elements.
@@ -24,10 +24,9 @@ public fun <E> reorderableSetOf(vararg elements: E): ReorderableSet<E> {
  * because the constructor and any method will call the setter (with a non-null value) on any incoming element before ever calling the getter.
  */
 public fun <E> reorderableSetOf(getCode: (E) -> OrderBitField, setCode: (E, OrderBitField) -> Unit, vararg elements: E): ReorderableSet<E> {
-    return SetLambdaBasedReorderableSet(getCode, setCode, *elements)
+    return SetLambdaBasedReorderableSet(getCode, setCode, elements.toList())
 }
 
 // TODO provide extension constructors (toReorderableSet) for Iterable, Sequence and Array
-// which requires changing the constructors of the classes to take an Iterable instead of vararg
 
 // TODO provide a way to manually provide the OrderBitField indexes without them being recomputed ?
