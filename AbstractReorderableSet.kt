@@ -107,10 +107,15 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
     private fun getTranche(start: E?, end: E?): Iterable<E> {
         val startCode = if (start == null) null else sortKey(start)
         val endCode = if (end == null) null else sortKey(end)
-        return this.filter { // not elements() so that the later sort is stable
-            val code = sortKey(it)
-            (startCode == null || startCode < code) && (endCode == null || code < endCode)
+        var tranche: Iterable<E> = this
+        // more efficient than .filter when it's already sorted
+        if (startCode != null) {
+            tranche = tranche.dropWhile { startCode < sortKey(it) }
         }
+        if (endCode != null) {
+            tranche = tranche.takeWhile { sortKey(it) < endCode }
+        }
+        return tranche
     }
     override fun <R : Comparable<R>> sortTrancheBy(start: E?, end: E?, selector: (E) -> R) {
         val tranche = getTranche(start, end).sortedBy(selector)
