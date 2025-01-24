@@ -18,7 +18,7 @@ public interface ReorderableSet<E>: Set<E> {
      * May be a cheaper operation than iterating over the container,
      * which does it in order.
      */
-    fun elements(): Iterable<E>
+    val elements: Iterable<E>
 
     /**
      * A key function, to be passed in the sortedBy function.

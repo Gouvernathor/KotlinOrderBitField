@@ -9,7 +9,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
     override abstract val sortKey: (E) -> OrderBitField
 
     operator override fun iterator(): Iterator<E> {
-        return elements().asSequence().sortedBy(sortKey).iterator()
+        return elements.asSequence().sortedBy(sortKey).iterator()
     }
 
     override fun putBetween(start: E, end: E, vararg newElements: E) {
@@ -20,7 +20,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
 
     override fun putAtEnd(vararg newElements: E, last: Boolean) {
         // codes that will not be changed by this operation
-        val unmovedCodes = elements().filter { it !in newElements }.map(sortKey)
+        val unmovedCodes = elements.filter { it !in newElements }.map(sortKey)
 
         val codes: Sequence<OrderBitField>
         val nCodes = newElements.size.toUInt()
@@ -38,7 +38,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         require(anchor in this) { "anchor must be in the container" }
 
         // codes that will not be changed by this operation
-        val unmovedCodes = elements().filter { it !in newElements }.map(sortKey)
+        val unmovedCodes = elements.filter { it !in newElements }.map(sortKey)
 
         // reference code, from which neighbors are
         val anchorTrueCode = sortKey(anchor)
@@ -84,14 +84,15 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         update((elements zip codes.toList()), false)
     }
     override fun recompute() {
-        fullRecompute(this) // not elements(), which is unordered
+        fullRecompute(this) // not elements, which is unordered
     }
     override fun <R : Comparable<R>> sortBy(selector: (E) -> R) {
-        fullRecompute(this.sortedBy(selector)) // not elements() so that the sort is stable
+        fullRecompute(this.sortedBy(selector)) // not elements so that the sort is stable
     }
     override fun sortWith(comparator: Comparator<in E>) {
         fullRecompute(this.sortedWith(comparator)) // same
     }
+
     private fun getTranche(start: OrderBitField?, end: OrderBitField?): Collection<E> {
         // keep the coming sort stable, and avoid filtering twice
         var tranche: Collection<E> = this
@@ -136,9 +137,9 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         require(isNotEmpty()) { "the container is empty" }
         val element: E
         if (last) {
-            element = elements().maxBy(sortKey)
+            element = elements.maxBy(sortKey)
         } else {
-            element = elements().minBy(sortKey)
+            element = elements.minBy(sortKey)
         }
         remove(element)
         return element
@@ -148,8 +149,8 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         val toPop = n.coerceAtMost(size)
         val sortedSeq = if (last)
             // this is faster if Sequence::sortedBy is lazy-optimized
-            elements().asSequence().sortedByDescending(sortKey) else
-            elements().asSequence().sortedBy(sortKey)
+            elements.asSequence().sortedByDescending(sortKey) else
+            elements.asSequence().sortedBy(sortKey)
         val rv = sortedSeq.take(toPop).toList()
         removeAll(rv)
         return rv

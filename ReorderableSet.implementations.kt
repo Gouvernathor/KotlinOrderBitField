@@ -32,9 +32,8 @@ private class MapBasedReorderableSet<E>(
 
     // remaining ReorderableSet methods
 
-    override fun elements(): Iterable<E> {
-        return store.keys
-    }
+    override val elements: Iterable<E>
+        get() = store.keys
 
     override val sortKey: (E) -> OrderBitField = { store[it]!! }
 
@@ -86,9 +85,8 @@ private class SetLambdaBasedReorderableSet<E>(
 
     // ReorderableSet methods
 
-    override fun elements(): Iterable<E> {
-        return store
-    }
+    override val elements: Iterable<E>
+        get() = store
 
     override val sortKey: (E) -> OrderBitField = getCode
 
