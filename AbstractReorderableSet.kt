@@ -91,20 +91,20 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
      * Not public because passing non-consecutive elements to this function
      * yields unspecified ordering with the intermingled elements.
      */
-    private fun partialRecompute(elements: Collection<E>) {
+    private fun fullRecompute(elements: Collection<E>) {
         val codes = OrderBitField.initial(elements.size.toUInt())
         update((elements zip codes.toList()), false)
     }
     override fun recompute() {
-        partialRecompute(this) // not elements(), which is unordered
+        fullRecompute(this) // not elements(), which is unordered
     }
     override fun <R : Comparable<R>> sortBy(selector: (E) -> R) {
-        partialRecompute(this.sortedBy(selector)) // not elements() so that the sort is stable
+        fullRecompute(this.sortedBy(selector)) // not elements() so that the sort is stable
     }
     override fun sortWith(comparator: Comparator<in E>) {
-        partialRecompute(this.sortedWith(comparator)) // same
+        fullRecompute(this.sortedWith(comparator)) // same
     }
-    private fun getTranche(start: E?, end: E?): Iterable<E> {
+    private fun getTranche(start: OrderBitField?, end: OrderBitField?): Iterable<E> {
         // keep the coming sort stable, and avoid filtering twice
         var tranche: Iterable<E> = this
         if (start == null) {
@@ -112,22 +112,48 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
                 return this
             }
         } else {
-            val startCode = sortKey(start)
-            tranche = tranche.dropWhile { startCode <= sortKey(it) }
+            tranche = tranche.dropWhile { start <= sortKey(it) }
         }
         if (end != null) {
-            val endCode = sortKey(end)
-            tranche = tranche.takeWhile { sortKey(it) < endCode }
+            tranche = tranche.takeWhile { sortKey(it) < end }
         }
         return tranche
     }
+    private fun partialRecompute(start: E?, end: E?, sorter: (Iterable<E>) -> Iterable<E>) {
+        val startCode: OrderBitField?
+        if (start == null) {
+            startCode = null
+        } else {
+            startCode = sortKey(start)
+        }
+        val endCode: OrderBitField?
+        if (end == null) {
+            endCode = null
+        } else {
+            endCode = sortKey(end)
+        }
+        val tranche = sorter(getTranche(startCode, endCode))
+        // the new codes
+        val codes: Sequence<OrderBitField>
+        val nCodes = tranche.count().toUInt()
+        if (startCode == null) {
+            if (endCode == null) {
+                codes = OrderBitField.initial(nCodes)
+            } else {
+                codes = OrderBitField.before(endCode, nCodes)
+            }
+        } else if (endCode == null) {
+            codes = OrderBitField.after(startCode, nCodes)
+        } else {
+            codes = OrderBitField.between(startCode, endCode, nCodes)
+        }
+        update((tranche zip codes.toList()))
+    }
     override fun <R : Comparable<R>> sortTrancheBy(start: E?, end: E?, selector: (E) -> R) {
-        val tranche = getTranche(start, end).sortedBy(selector)
-        partialRecompute(tranche)
+        partialRecompute(start, end, { it.sortedBy(selector) })
     }
     override fun sortTrancheWith(start: E?, end: E?, comparator: Comparator<in E>) {
-        val tranche = getTranche(start, end).sortedWith(comparator)
-        partialRecompute(tranche)
+        partialRecompute(start, end, { it.sortedWith(comparator) })
     }
 
     override fun popItem(last: Boolean): E {
