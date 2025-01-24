@@ -70,19 +70,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
             end = anchorCode
         }
         // the new codes
-        val codes: Sequence<OrderBitField>
-        val nCodes = newElements.size.toUInt()
-        if (start == null) {
-            if (end == null) {
-                codes = OrderBitField.initial(nCodes)
-            } else {
-                codes = OrderBitField.before(end, nCodes)
-            }
-        } else if (end == null) {
-            codes = OrderBitField.after(start, nCodes)
-        } else {
-            codes = OrderBitField.between(start, end, nCodes)
-        }
+        val codes = OrderBitField.generate(start, end, newElements.size.toUInt())
         update((newElements zip codes.toList()))
     }
 
@@ -104,9 +92,9 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
     override fun sortWith(comparator: Comparator<in E>) {
         fullRecompute(this.sortedWith(comparator)) // same
     }
-    private fun getTranche(start: OrderBitField?, end: OrderBitField?): Iterable<E> {
+    private fun getTranche(start: OrderBitField?, end: OrderBitField?): Collection<E> {
         // keep the coming sort stable, and avoid filtering twice
-        var tranche: Iterable<E> = this
+        var tranche: Collection<E> = this
         if (start == null) {
             if (end == null) {
                 return this
@@ -119,7 +107,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         }
         return tranche
     }
-    private fun partialRecompute(start: E?, end: E?, sorter: (Iterable<E>) -> Iterable<E>) {
+    private fun partialRecompute(start: E?, end: E?, sorter: (Collection<E>) -> Collection<E>) {
         val startCode: OrderBitField?
         if (start == null) {
             startCode = null
@@ -134,19 +122,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         }
         val tranche = sorter(getTranche(startCode, endCode))
         // the new codes
-        val codes: Sequence<OrderBitField>
-        val nCodes = tranche.count().toUInt()
-        if (startCode == null) {
-            if (endCode == null) {
-                codes = OrderBitField.initial(nCodes)
-            } else {
-                codes = OrderBitField.before(endCode, nCodes)
-            }
-        } else if (endCode == null) {
-            codes = OrderBitField.after(startCode, nCodes)
-        } else {
-            codes = OrderBitField.between(startCode, endCode, nCodes)
-        }
+        val codes = OrderBitField.generate(startCode, endCode, tranche.size.toUInt())
         update((tranche zip codes.toList()))
     }
     override fun <R : Comparable<R>> sortTrancheBy(start: E?, end: E?, selector: (E) -> R) {
