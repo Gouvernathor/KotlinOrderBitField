@@ -93,38 +93,25 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         fullRecompute(this.sortedWith(comparator)) // same
     }
 
-    private fun getTranche(start: OrderBitField?, end: OrderBitField?): Collection<E> {
-        // keep the coming sort stable, and avoid filtering twice
-        var tranche: Collection<E> = this
-        if (start == null) {
-            if (end == null) {
-                return this
-            }
-        } else {
-            tranche = tranche.dropWhile { start <= sortKey(it) }
-        }
-        if (end != null) {
-            tranche = tranche.takeWhile { sortKey(it) < end }
-        }
-        return tranche
-    }
     private fun partialRecompute(start: E?, end: E?, sorter: (Collection<E>) -> Collection<E>) {
+        var tranche: Collection<E> = this
         val startCode: OrderBitField?
-        if (start == null) {
-            startCode = null
-        } else {
+        if (start != null) {
             startCode = sortKey(start)
+            tranche = tranche.dropWhile { startCode <= sortKey(it) }
+        } else {
+            startCode = null
         }
         val endCode: OrderBitField?
-        if (end == null) {
-            endCode = null
-        } else {
+        if (end != null) {
             endCode = sortKey(end)
+            tranche = tranche.takeWhile { sortKey(it) < endCode }
+        } else {
+            endCode = null
         }
-        val tranche = sorter(getTranche(startCode, endCode))
         // the new codes
         val codes = OrderBitField.generate(startCode, endCode, tranche.size.toUInt())
-        update((tranche zip codes.toList()))
+        update((sorter(tranche) zip codes.toList()))
     }
     override fun <R : Comparable<R>> sortTrancheBy(start: E?, end: E?, selector: (E) -> R) {
         partialRecompute(start, end, { it.sortedBy(selector) })
