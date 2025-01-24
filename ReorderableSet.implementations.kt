@@ -50,12 +50,19 @@ private class MapBasedReorderableSet<E>(
     }
 }
 
-internal class SetLambdaBasedReorderableSet<E>(
+internal fun <E> SetLambdaBasedReorderableSet(
+    getCode: (E) -> OrderBitField,
+    setCode: (E, OrderBitField) -> Unit,
+    elements: Iterable<E>,
+): ReorderableSet<E> {
+    return SetLambdaBasedReorderableSet(getCode, setCode, elements.toMutableSet())
+}
+
+private class SetLambdaBasedReorderableSet<E>(
     private val getCode: (E) -> OrderBitField,
     private val setCode: (E, OrderBitField) -> Unit,
-    elements: Iterable<E>,
+    private val store: MutableSet<E>,
 ): AbstractReorderableSet<E>() {
-    private val store: MutableSet<E> = elements.toMutableSet()
 
     // AbstractReorderableSet method
 
