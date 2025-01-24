@@ -8,15 +8,6 @@ internal fun <E> MapBasedReorderableSet(elements: Collection<E>): ReorderableSet
         return MapBasedReorderableSet((elements zip codes).toMap().toMutableMap())
     }
 }
-// internal fun <E> MapBasedReorderableSet(elements: Iterable<E>): ReorderableSet<E> {
-//     return MapBasedReorderableSet(elements.toList())
-// }
-// internal fun <E> MapBasedReorderableSet(elements: Sequence<E>): ReorderableSet<E> {
-//     return MapBasedReorderableSet(elements.toList())
-// }
-// internal fun <E> MapBasedReorderableSet(elements: Array<E>): ReorderableSet<E> {
-//     return MapBasedReorderableSet(elements.toList())
-// }
 
 private class MapBasedReorderableSet<E>(
     private val store: MutableMap<E, OrderBitField>,
@@ -65,17 +56,6 @@ internal class SetLambdaBasedReorderableSet<E>(
     elements: Iterable<E>,
 ): AbstractReorderableSet<E>() {
     private val store: MutableSet<E> = elements.toMutableSet()
-
-    // constructor(
-    //     getCode: (E) -> OrderBitField,
-    //     setCode: (E, OrderBitField) -> Unit,
-    //     elements: Sequence<E>,
-    // ): this(getCode, setCode, elements.toList())
-    // constructor(
-    //     getCode: (E) -> OrderBitField,
-    //     setCode: (E, OrderBitField) -> Unit,
-    //     elements: Array<E>,
-    // ): this(getCode, setCode, elements.toList())
 
     // AbstractReorderableSet method
 
