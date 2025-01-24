@@ -1,21 +1,26 @@
 package fr.gouvernathor.orderbitfield
 
-internal class MapBasedReorderableSet<E>(
-    elements: Collection<E>,
-): AbstractReorderableSet<E>() {
-    private val store: MutableMap<E, OrderBitField>
-    init {
-        if (elements.isEmpty()) {
-            store = mutableMapOf()
-        } else {
-            val codes = OrderBitField.initial(elements.size.toUInt()).toList()
-            store = (elements zip codes).toMap().toMutableMap()
-        }
+internal fun <E> MapBasedReorderableSet(elements: Collection<E>): ReorderableSet<E> {
+    if (elements.isEmpty()) {
+        return MapBasedReorderableSet(mutableMapOf())
+    } else {
+        val codes = OrderBitField.initial(elements.size.toUInt()).toList()
+        return MapBasedReorderableSet((elements zip codes).toMap().toMutableMap())
     }
+}
+// internal fun <E> MapBasedReorderableSet(elements: Iterable<E>): ReorderableSet<E> {
+//     return MapBasedReorderableSet(elements.toList())
+// }
+// internal fun <E> MapBasedReorderableSet(elements: Sequence<E>): ReorderableSet<E> {
+//     return MapBasedReorderableSet(elements.toList())
+// }
+// internal fun <E> MapBasedReorderableSet(elements: Array<E>): ReorderableSet<E> {
+//     return MapBasedReorderableSet(elements.toList())
+// }
 
-    // constructor(elements: Iterable<E>): this(elements.toList())
-    // constructor(elements: Sequence<E>): this(elements.toList())
-    // constructor(elements: Array<E>): this(elements.toList())
+private class MapBasedReorderableSet<E>(
+    private val store: MutableMap<E, OrderBitField>,
+): AbstractReorderableSet<E>() {
 
     // AbstractReorderableSet method
 
