@@ -10,12 +10,12 @@ internal fun <E> MapBasedReorderableSet(elements: Collection<E>): ReorderableSet
 }
 
 private class MapBasedReorderableSet<E>(
-    private val store: MutableMap<E, OrderBitField>,
+    private val store: MutableMap<E, Code>,
 ): AbstractReorderableSet<E>() {
 
     // AbstractReorderableSet method
 
-    override fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean) {
+    override fun update(pairs: Iterable<Pair<E, Code>>, mayBeNew: Boolean) {
         store.putAll(pairs)
     }
 
@@ -35,7 +35,7 @@ private class MapBasedReorderableSet<E>(
     override val elements: Iterable<E>
         get() = store.keys
 
-    override val sortKey: (E) -> OrderBitField = { store[it]!! }
+    override val sortKey: (E) -> Code = { store[it]!! }
 
     override fun remove(element: E): Boolean {
         return store.remove(element) != null
@@ -50,22 +50,22 @@ private class MapBasedReorderableSet<E>(
 }
 
 internal fun <E> SetLambdaBasedReorderableSet(
-    getCode: (E) -> OrderBitField,
-    setCode: (E, OrderBitField) -> Unit,
+    getCode: (E) -> Code,
+    setCode: (E, Code) -> Unit,
     elements: Iterable<E>,
 ): ReorderableSet<E> {
     return SetLambdaBasedReorderableSet(getCode, setCode, elements.toMutableSet())
 }
 
 private class SetLambdaBasedReorderableSet<E>(
-    private val getCode: (E) -> OrderBitField,
-    private val setCode: (E, OrderBitField) -> Unit,
+    private val getCode: (E) -> Code,
+    private val setCode: (E, Code) -> Unit,
     private val store: MutableSet<E>,
 ): AbstractReorderableSet<E>() {
 
     // AbstractReorderableSet method
 
-    override fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean) {
+    override fun update(pairs: Iterable<Pair<E, Code>>, mayBeNew: Boolean) {
         pairs.forEach { (element, code) -> setCode(element, code) }
         if (mayBeNew) {
             store.addAll(pairs.map { it.first })
@@ -88,7 +88,7 @@ private class SetLambdaBasedReorderableSet<E>(
     override val elements: Iterable<E>
         get() = store
 
-    override val sortKey: (E) -> OrderBitField = getCode
+    override val sortKey: (E) -> Code = getCode
 
     override fun remove(element: E): Boolean {
         return store.remove(element)

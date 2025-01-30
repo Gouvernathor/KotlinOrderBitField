@@ -2,11 +2,11 @@ package fr.gouvernathor.orderbitfield
 
 internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
     abstract protected fun update(
-        pairs: Iterable<Pair<E, OrderBitField>>,
+        pairs: Iterable<Pair<E, Code>>,
         mayBeNew: Boolean = true,
     ): Unit
 
-    override abstract val sortKey: (E) -> OrderBitField
+    override abstract val sortKey: (E) -> Code
 
     operator override fun iterator(): Iterator<E> {
         return elements.asSequence().sortedBy(sortKey).iterator()
@@ -22,7 +22,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         // codes that will not be changed by this operation
         val unmovedCodes = elements.filter { it !in newElements }.map(sortKey)
 
-        val codes: Sequence<OrderBitField>
+        val codes: Sequence<Code>
         val nCodes = newElements.size.toUInt()
         if (unmovedCodes.isEmpty()) {
             codes = OrderBitField.initial(nCodes)
@@ -49,7 +49,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
 
         // one of the codes, that will be used as the boundary on the side of the anchor
         // in case the anchor is a part of the new elements
-        val anchorCode: OrderBitField?
+        val anchorCode: Code?
         if (anchor in newElements) {
             if (after) {
                 anchorCode = unmovedCodesBefore.maxOrNull()
@@ -60,8 +60,8 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
             anchorCode = anchorTrueCode
         }
         // the actual boundary codes
-        val start: OrderBitField?
-        val end: OrderBitField?
+        val start: Code?
+        val end: Code?
         if (after) {
             start = anchorCode
             end = unmovedCodesAfter.minOrNull()
@@ -95,14 +95,14 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
 
     private fun partialRecompute(start: E?, end: E?, sorter: (Collection<E>) -> Collection<E>) {
         var tranche: Collection<E> = this
-        val startCode: OrderBitField?
+        val startCode: Code?
         if (start != null) {
             startCode = sortKey(start)
             tranche = tranche.dropWhile { startCode <= sortKey(it) }
         } else {
             startCode = null
         }
-        val endCode: OrderBitField?
+        val endCode: Code?
         if (end != null) {
             endCode = sortKey(end)
             tranche = tranche.takeWhile { sortKey(it) < endCode }
