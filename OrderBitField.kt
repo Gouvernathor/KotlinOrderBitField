@@ -2,6 +2,15 @@ package fr.gouvernathor.orderbitfield
 
 internal val EMPTY_CODE: Code = emptyList()
 
+/*
+TODO
+Redo this section in a more Kotlin-esque way, if possible
+- factory methods instead of static multi-constructors
+- extension functions instead of methods (incl. compareTo)
+- have the functions return, and generally handle, Code instances
+- have the OBF class be always bound, with a maxSize, and also an implementation detail not part of the API
+ */
+
 /**
  * Represents the ordering index of a value with respect to other similarly indexed values.
  */
