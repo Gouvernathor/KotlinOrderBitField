@@ -13,15 +13,6 @@ import kotlin.collections.dropLast
 import kotlin.math.ceil
 import kotlin.math.log
 
-private operator fun Code.compareTo(other: Code): Int {
-    val n = size.coerceAtMost(other.size)
-    for (i in 0 until n) {
-        val diff = this[i].compareTo(other[i])
-        if (diff != 0) return diff
-    }
-    return size.compareTo(other.size)
-}
-
 private infix fun Int.pow(exponent: UInt): Int {
     var rv = 1
     for (i in 0u until exponent) {

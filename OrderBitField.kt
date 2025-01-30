@@ -88,15 +88,6 @@ public class BoundedOrderBitField internal constructor(code: Code, val maxSize: 
         }
     }
 
-    override operator fun compareTo(other: BoundedOrderBitField): Int {
-        val n = size.coerceAtMost(other.size)
-        for (i in 0..<n) {
-            val diff = this[i].compareTo(other[i])
-            if (diff != 0) return diff
-        }
-        return size.compareTo(other.size)
-    }
-
     /**
      * Returns an OrderBitField instance whose size is exactly the given size (or the native maxsize if not provided).
      * Primarily used as part as code concatenation,
@@ -109,6 +100,15 @@ public class BoundedOrderBitField internal constructor(code: Code, val maxSize: 
         require(padSize <= uSize) { "the pad size must be lesser or equal to the size" }
         return BoundedOrderBitField(this as Code + (List((padSize - uSize).toInt()) { 0u.toUByte() }), maxSize)
     }
+}
+
+operator fun Code.compareTo(other: Code): Int {
+    val n = this.size.coerceAtMost(other.size)
+    for (i in 0 until n) {
+        val diff = this[i].compareTo(other[i])
+        if (diff != 0) return diff
+    }
+    return size.compareTo(other.size)
 }
 
 /**
