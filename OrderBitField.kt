@@ -14,7 +14,7 @@ Redo this section in a more Kotlin-esque way, if possible
 /**
  * Represents the ordering index of a value with respect to other similarly indexed values.
  */
-public class BoundedOrderBitField internal constructor(code: Code, val maxSize: UInt): Code by code, Comparable<BoundedOrderBitField> {
+public class BoundedOrderBitField internal constructor(code: Code, val maxSize: UInt): Code by code {
     init {
         require(code.isNotEmpty()) { "code must not be empty (internal error)" }
         require(code.size.toUInt() <= maxSize) { "code is larger than maxSize" }
