@@ -14,7 +14,7 @@ Redo this section in a more Kotlin-esque way, if possible
 /**
  * Represents the ordering index of a value with respect to other similarly indexed values.
  */
-public class OrderBitField protected constructor(code: Code, val maxSize: UInt?): Code by code, Comparable<OrderBitField> {
+public class OrderBitField internal constructor(code: Code, val maxSize: UInt?): Code by code, Comparable<OrderBitField> {
     init {
         require(code.isNotEmpty()) { "code must not be empty (internal error)" }
         require(maxSize == null || (code.size.toUInt() <= maxSize)) { "code is larger than maxSize" }
@@ -97,21 +97,25 @@ public class OrderBitField protected constructor(code: Code, val maxSize: UInt?)
         require(padSize <= uSize) { "the pad size must be lesser or equal to the size" }
         return OrderBitField(this as Code + (List((padSize - uSize).toInt()) { 0u.toUByte() }), maxSize)
     }
+}
 
-    /**
-     * Addition is only supported when the left operand is bounded (when it has a maxSize).
-     *
-     * To support this uniformly in systems where orderBitFields always have the same maxSize,
-     * (for instance when they match a VARBINARY(x) column in a database),
-     * you can simply provide a replacement for the Companion object whose methods take no maxSize parameter,
-     * and pass the chosen maxSize to the actual Companion collective constructor functions.
-     * If/when it matches a BINARY(x) column, you can make the proxy Companion object's methods
-     * map their return values using OrderBitField::rPad.
-     */
-    operator fun plus(other: OrderBitField): OrderBitField {
-        require(bounded) { "the left operand must be bounded for addition to work" }
-        val code = this.rPad() + other as Code
-        val newMaxSize = other.maxSize ?.plus(maxSize!!)
+/**
+ * Addition is only supported when the left operand is bounded (when it has a maxSize).
+ *
+ * To support this uniformly in systems where orderBitFields always have the same maxSize,
+ * (for instance when they match a VARBINARY(x) column in a database),
+ * you can simply provide a replacement for the Companion object whose methods take no maxSize parameter,
+ * and pass the chosen maxSize to the actual Companion collective constructor functions.
+ * If/when it matches a BINARY(x) column, you can make the proxy Companion object's methods
+ * map their return values using OrderBitField::rPad.
+ */
+operator fun Code.plus(other: Code): Code {
+    require(this is OrderBitField) { "The left operand must be bounded with a maximum length for addition to work" }
+    val code = this.rPad() + other
+    if (other is OrderBitField) {
+        val newMaxSize = (this.maxSize!) + (other.maxSize!)
         return OrderBitField(code, newMaxSize)
+    } else {
+        return code
     }
 }
