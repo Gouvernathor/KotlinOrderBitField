@@ -14,14 +14,11 @@ Redo this section in a more Kotlin-esque way, if possible
 /**
  * Represents the ordering index of a value with respect to other similarly indexed values.
  */
-public class OrderBitField internal constructor(code: Code, val maxSize: UInt?): Code by code, Comparable<OrderBitField> {
+public class BoundedOrderBitField internal constructor(code: Code, val maxSize: UInt): Code by code, Comparable<BoundedOrderBitField> {
     init {
         require(code.isNotEmpty()) { "code must not be empty (internal error)" }
-        require(maxSize == null || (code.size.toUInt() <= maxSize)) { "code is larger than maxSize" }
+        require(code.size.toUInt() <= maxSize) { "code is larger than maxSize" }
     }
-
-    val bounded: Boolean
-        get() = maxSize != null
 
     companion object {
         /**
@@ -29,8 +26,11 @@ public class OrderBitField internal constructor(code: Code, val maxSize: UInt?):
          * Returns the shortest possible values,
          * and then as evenly distributed as possible.
          */
-        fun initial(n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            yieldAll(generateCodes(n, EMPTY_CODE, null, EMPTY_CODE).map { OrderBitField(it, maxSize) })
+        fun initial(n: UInt = 1u): Sequence<Code> = sequence {
+            yieldAll(generateCodes(n, EMPTY_CODE, null, EMPTY_CODE))
+        }
+        fun initial(n: UInt = 1u, maxSize: UInt): Sequence<Code> {
+            return initial(n).map { BoundedOrderBitField(it, maxSize) }
         }
 
         /**
@@ -38,18 +38,27 @@ public class OrderBitField internal constructor(code: Code, val maxSize: UInt?):
          * Returns the shortest possible values,
          * and then as evenly spaced between the two boundaries as possible.
          */
-        fun between(start: OrderBitField, end: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
+        fun between(start: Code, end: Code, n: UInt = 1u): Sequence<Code> = sequence {
             require(start < end) { "start must be less than end" }
             val prefix = commonPrefix(start, end)
-            yieldAll(generateCodes(n, start.drop(prefix.size), end.drop(prefix.size), prefix).map { OrderBitField(it, maxSize) })
+            yieldAll(generateCodes(n, start.drop(prefix.size), end.drop(prefix.size), prefix))
+        }
+        fun between(start: Code, end: Code, n: UInt = 1u, maxSize: UInt): Sequence<Code> {
+            return between(start, end, n, maxSize).map { BoundedOrderBitField(it, maxSize) }
         }
 
-        fun before(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            yieldAll(generateCodes(n, EMPTY_CODE, other, EMPTY_CODE).map { OrderBitField(it, maxSize) })
+        fun before(other: Code, n: UInt = 1u): Sequence<Code> = sequence {
+            yieldAll(generateCodes(n, EMPTY_CODE, other, EMPTY_CODE))
+        }
+        fun before(other: Code, n: UInt = 1u, maxSize: UInt): Sequence<Code> {
+            return before(other, n).map { BoundedOrderBitField(it, maxSize) }
         }
 
-        fun after(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            yieldAll(generateCodes(n, other, null, EMPTY_CODE).map { OrderBitField(it, maxSize) })
+        fun after(other: Code, n: UInt = 1u): Sequence<Code> = sequence {
+            yieldAll(generateCodes(n, other, null, EMPTY_CODE))
+        }
+        fun after(other: Code, n: UInt = 1u, maxSize: UInt): Sequence<Code> {
+            return after(other, n).map { BoundedOrderBitField(it, maxSize) }
         }
 
         /**
@@ -58,7 +67,7 @@ public class OrderBitField internal constructor(code: Code, val maxSize: UInt?):
          * accepts Code instead of only OrderBitField,
          * doesn't check that the boundaries are correctly ordered.
          */
-        fun generate(start: Code?, end: Code?, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
+        fun generate(start: Code?, end: Code?, n: UInt = 1u): Sequence<Code> = sequence {
             val prefix: Code
             if (start != null && end != null) {
                 prefix = commonPrefix(start, end)
@@ -72,11 +81,14 @@ public class OrderBitField internal constructor(code: Code, val maxSize: UInt?):
             } else {
                 e = null
             }
-            yieldAll(generateCodes(n, s, e, prefix).map { OrderBitField(it, maxSize) })
+            yieldAll(generateCodes(n, s, e, prefix))
+        }
+        fun generate(start: Code?, end: Code?, n: UInt = 1u, maxSize: UInt): Sequence<BoundedOrderBitField> {
+            return generate(start, end, n).map { BoundedOrderBitField(it, maxSize) }
         }
     }
 
-    override operator fun compareTo(other: OrderBitField): Int {
+    override operator fun compareTo(other: BoundedOrderBitField): Int {
         val n = size.coerceAtMost(other.size)
         for (i in 0..<n) {
             val diff = this[i].compareTo(other[i])
@@ -90,12 +102,12 @@ public class OrderBitField internal constructor(code: Code, val maxSize: UInt?):
      * Primarily used as part as code concatenation,
      * also useful when matching a BINARY(x) (rather than VARBINARY) column in a database.
      */
-    fun rPad(padSize: UInt? = maxSize): OrderBitField {
+    fun rPad(padSize: UInt? = maxSize): BoundedOrderBitField {
         require(padSize != null) { "the pad size must be specified when the OrderBitField is unbounded" }
         val uSize = size.toUInt()
         if (padSize == uSize) return this
         require(padSize <= uSize) { "the pad size must be lesser or equal to the size" }
-        return OrderBitField(this as Code + (List((padSize - uSize).toInt()) { 0u.toUByte() }), maxSize)
+        return BoundedOrderBitField(this as Code + (List((padSize - uSize).toInt()) { 0u.toUByte() }), maxSize)
     }
 }
 
@@ -110,11 +122,11 @@ public class OrderBitField internal constructor(code: Code, val maxSize: UInt?):
  * map their return values using OrderBitField::rPad.
  */
 operator fun Code.plus(other: Code): Code {
-    require(this is OrderBitField) { "The left operand must be bounded with a maximum length for addition to work" }
+    require(this is BoundedOrderBitField) { "The left operand must be bounded with a maximum length for addition to work" }
     val code = this.rPad() + other
-    if (other is OrderBitField) {
+    if (other is BoundedOrderBitField) {
         val newMaxSize = (this.maxSize!) + (other.maxSize!)
-        return OrderBitField(code, newMaxSize)
+        return BoundedOrderBitField(code, newMaxSize)
     } else {
         return code
     }
