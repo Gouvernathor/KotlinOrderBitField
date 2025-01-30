@@ -31,7 +31,7 @@ public object OrderBitField {
     fun initial(n: UInt = 1u): Sequence<Code> = sequence {
         yieldAll(generateCodes(n, EMPTY_CODE, null, EMPTY_CODE))
     }
-    fun initial(n: UInt = 1u, maxSize: UInt): Sequence<Code> {
+    fun initial(n: UInt = 1u, maxSize: UInt): Sequence<BoundedOrderBitField> {
         return initial(n).map { BoundedOrderBitField(it, maxSize) }
     }
 
@@ -45,28 +45,27 @@ public object OrderBitField {
         val prefix = commonPrefix(start, end)
         yieldAll(generateCodes(n, start.drop(prefix.size), end.drop(prefix.size), prefix))
     }
-    fun between(start: Code, end: Code, n: UInt = 1u, maxSize: UInt): Sequence<Code> {
+    fun between(start: Code, end: Code, n: UInt = 1u, maxSize: UInt): Sequence<BoundedOrderBitField> {
         return between(start, end, n, maxSize).map { BoundedOrderBitField(it, maxSize) }
     }
 
     fun before(other: Code, n: UInt = 1u): Sequence<Code> = sequence {
         yieldAll(generateCodes(n, EMPTY_CODE, other, EMPTY_CODE))
     }
-    fun before(other: Code, n: UInt = 1u, maxSize: UInt): Sequence<Code> {
+    fun before(other: Code, n: UInt = 1u, maxSize: UInt): Sequence<BoundedOrderBitField> {
         return before(other, n).map { BoundedOrderBitField(it, maxSize) }
     }
 
     fun after(other: Code, n: UInt = 1u): Sequence<Code> = sequence {
         yieldAll(generateCodes(n, other, null, EMPTY_CODE))
     }
-    fun after(other: Code, n: UInt = 1u, maxSize: UInt): Sequence<Code> {
+    fun after(other: Code, n: UInt = 1u, maxSize: UInt): Sequence<BoundedOrderBitField> {
         return after(other, n).map { BoundedOrderBitField(it, maxSize) }
     }
 
     /**
      * Multi-purpose version of the 4 functions above,
      * pass null to remove a boundary,
-     * accepts Code instead of only OrderBitField,
      * doesn't check that the boundaries are correctly ordered.
      */
     fun generate(start: Code?, end: Code?, n: UInt = 1u): Sequence<Code> = sequence {
