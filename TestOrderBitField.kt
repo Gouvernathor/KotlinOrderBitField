@@ -21,8 +21,6 @@ private infix fun Int.pow(exponent: UInt): Int {
     return rv
 }
 
-val ZERO_UBYTE = 0u.toUByte()
-
 class TestOrderBitField(randomKey: Int? = null) {
     val random = Random(randomKey ?: Random.Default.nextInt())
 

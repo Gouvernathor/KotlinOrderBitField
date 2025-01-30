@@ -1,6 +1,7 @@
 package fr.gouvernathor.orderbitfield
 
 internal val EMPTY_CODE: Code = emptyList()
+internal val ZERO_UBYTE = 0u.toUByte()
 
 /*
 TODO
@@ -18,19 +19,6 @@ public class BoundedOrderBitField internal constructor(code: Code, val maxSize: 
     init {
         require(code.isNotEmpty()) { "code must not be empty (internal error)" }
         require(code.size.toUInt() <= maxSize) { "code is larger than maxSize" }
-    }
-
-    /**
-     * Returns an OrderBitField instance whose size is exactly the given size (or the native maxsize if not provided).
-     * Primarily used as part as code concatenation,
-     * also useful when matching a BINARY(x) (rather than VARBINARY) column in a database.
-     */
-    fun rPad(padSize: UInt? = maxSize): BoundedOrderBitField {
-        require(padSize != null) { "the pad size must be specified when the OrderBitField is unbounded" }
-        val uSize = size.toUInt()
-        if (padSize == uSize) return this
-        require(padSize <= uSize) { "the pad size must be lesser or equal to the size" }
-        return BoundedOrderBitField(this as Code + (List((padSize - uSize).toInt()) { 0u.toUByte() }), maxSize)
     }
 }
 
@@ -100,7 +88,25 @@ public object OrderBitField {
     fun generate(start: Code?, end: Code?, n: UInt = 1u, maxSize: UInt): Sequence<BoundedOrderBitField> {
         return generate(start, end, n).map { BoundedOrderBitField(it, maxSize) }
     }
+}
 
+/**
+ * Returns a BoundedOrderBitField instance whose size is exactly the given size (or the native maxsize if not provided).
+ * Primarily used as part as code concatenation,
+ * also useful when matching a BINARY(x) (rather than VARBINARY) column in a database.
+ */
+fun Code.rPad(padSize: UInt): BoundedOrderBitField {
+    val uSize = size.toUInt()
+    if (padSize == uSize) {
+        if (this is BoundedOrderBitField)
+            return this
+        return BoundedOrderBitField(this, padSize)
+    }
+    require(padSize <= uSize) { "the pad size must be lesser or equal to the size" }
+    return BoundedOrderBitField(this + (List((padSize - uSize).toInt()) { ZERO_UBYTE }), padSize)
+}
+fun BoundedOrderBitField.rPad(): BoundedOrderBitField {
+    return this.rPad(this.maxSize)
 }
 
 operator fun Code.compareTo(other: Code): Int {
