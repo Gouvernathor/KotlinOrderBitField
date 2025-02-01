@@ -2,7 +2,7 @@ package fr.gouvernathor.orderbitfield
 
 public typealias Code = List<UByte>
 
-private val MAX_BYTE = UByte.Companion.MAX_VALUE
+private val MAX_BYTE = UByte.MAX_VALUE
 private val TOP_VALUE = MAX_BYTE + 1u
 private val MAGIC_MIDDLE = (TOP_VALUE / 2u).toUByte()
 
