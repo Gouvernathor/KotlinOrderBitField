@@ -2,6 +2,38 @@ package fr.gouvernathor.orderbitfield
 
 private val EMPTY_CODE: Code = emptyList()
 
+private object abstractOrderBitFieldFactory {
+    fun <O: OrderBitField> initial(n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
+        yieldAll(generateCodes(n, EMPTY_CODE, null, EMPTY_CODE).map(construct))
+    }
+
+    fun <O: OrderBitField> between(start: O, end: O, n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
+        require(start < end) { "start must be less than end" } // TODO
+        val prefix = commonPrefix(start.code, end.code)
+        yieldAll(generateCodes(n, start.code.drop(prefix.size), end.code.drop(prefix.size), prefix).map(construct))
+    }
+
+    fun <O: OrderBitField> before(other: O, n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
+        yieldAll(generateCodes(n, EMPTY_CODE, other.code, EMPTY_CODE).map(construct))
+    }
+
+    fun <O: OrderBitField> after(other: O, n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
+        yieldAll(generateCodes(n, other.code, null, EMPTY_CODE).map(construct))
+    }
+
+    fun <O: OrderBitField> generate(start: Code?, end: Code?, n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
+        val prefix: Code
+        if (start != null && end != null) {
+            prefix = commonPrefix(start, end)
+        } else {
+            prefix = EMPTY_CODE
+        }
+        val s = start ?: EMPTY_CODE
+        val e = if (end?.size ?: 0 > 0) end else null
+        yieldAll(generateCodes(n, s, e, prefix).map(construct))
+    }
+}
+
 public open class OrderBitField internal constructor(internal val code: Code): OrderField<OrderBitField> {
     init {
         require(code.isNotEmpty()) { "code must not be empty (internal error)" }
@@ -11,53 +43,36 @@ public open class OrderBitField internal constructor(internal val code: Code): O
      * Constructs both OrderBitField and BoundedOrderBitField instances.
      */
     companion object: OrderValueFactory<OrderBitField> {
-        private fun construct(code: Code, maxSize: UInt?): OrderBitField {
-            return if (maxSize != null) {
-                BoundedOrderBitField(code, maxSize)
-            } else {
-                OrderBitField(code)
-            }
-        }
-
-        fun initial(n: UInt, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            yieldAll(generateCodes(n, EMPTY_CODE, null, EMPTY_CODE).map { construct(it, maxSize) })
-        }
-        override fun initial(n: UInt) = initial(n, null)
-
-        fun between(start: OrderBitField, end: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            require(start < end) { "start must be less than end" }
-            val prefix = commonPrefix(start.code, end.code)
-            yieldAll(generateCodes(n, start.code.drop(prefix.size), end.code.drop(prefix.size), prefix).map { construct(it, maxSize) })
-        }
-        override fun between(start: OrderBitField, end: OrderBitField, n: UInt) = between(start, end, n, null)
-
-        fun before(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            yieldAll(generateCodes(n, EMPTY_CODE, other.code, EMPTY_CODE).map { construct(it, maxSize) })
-        }
-        override fun before(other: OrderBitField, n: UInt) = before(other, n, null)
-
-        fun after(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            yieldAll(generateCodes(n, other.code, null, EMPTY_CODE).map { construct(it, maxSize) })
-        }
-        override fun after(other: OrderBitField, n: UInt) = after(other, n, null)
-
+        private fun getConstruct(maxSize: UInt?): (Code) -> OrderBitField =
+            if (maxSize != null)
+                ({ BoundedOrderBitField(it, maxSize) })
+            else
+                ::OrderBitField
+        fun initial(n: UInt, maxSize: UInt? = null): Sequence<OrderBitField> =
+            abstractOrderBitFieldFactory.initial(n, getConstruct(maxSize))
+        fun between(start: OrderBitField, end: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> =
+            abstractOrderBitFieldFactory.between(start, end, n, getConstruct(maxSize))
+        fun before(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> =
+            abstractOrderBitFieldFactory.before(other, n, getConstruct(maxSize))
+        fun after(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> =
+            abstractOrderBitFieldFactory.after(other, n, getConstruct(maxSize))
         /**
          * Multi-purpose version of the 4 functions above,
          * pass null to remove a boundary,
          * accepts Code instead of only OrderBitField,
          * doesn't check that the boundaries are correctly ordered.
          */
-        fun generate(start: Code?, end: Code?, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            val prefix: Code
-            if (start != null && end != null) {
-                prefix = commonPrefix(start, end)
-            } else {
-                prefix = EMPTY_CODE
-            }
-            val s = start ?: EMPTY_CODE
-            val e = if (end?.size ?: 0 > 0) end else null
-            yieldAll(generateCodes(n, s, e, prefix).map { construct(it, maxSize) })
-        }
+        fun generate(start: Code?, end: Code?, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> =
+            abstractOrderBitFieldFactory.generate(start, end, n, getConstruct(maxSize))
+
+        override fun initial(n: UInt) =
+            abstractOrderBitFieldFactory.initial(n, ::OrderBitField)
+        override fun between(start: OrderBitField, end: OrderBitField, n: UInt) =
+            abstractOrderBitFieldFactory.between(start, end, n, ::OrderBitField)
+        override fun before(other: OrderBitField, n: UInt) =
+            abstractOrderBitFieldFactory.before(other, n, ::OrderBitField)
+        override fun after(other: OrderBitField, n: UInt) =
+            abstractOrderBitFieldFactory.after(other, n, ::OrderBitField)
     }
 
     override fun compareTo(other: OrderBitField): Int {
