@@ -8,6 +8,8 @@ package fr.gouvernathor.orderbitfield
  * Technically they are, but their indices are not contiguous, and opaque (you can't find an element by its index).
  * Unlike any mutable collection, you can't insert an element without specifying where to insert it relative to the existing elements.
  * The container is mutable in two ways: you can add and remove elements, and you can also efficiently reorder them.
+ * Performance-wise, this class is optimized for very efficient reordering of elements,
+ * and slow iteration of the elements in order.
  *
  * Unless otherwise specified, mutation methods generally ignore
  * whether the elements to insert are already in the container or not.

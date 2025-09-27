@@ -3,7 +3,7 @@ package fr.gouvernathor.orderbitfield
 /**
  * Create a new ReorderableSet with the given elements.
  * Use this if you don't intend to manipulate OrderBitField indexes,
- * and if the elements don't contain them in their structure.
+ * and if the elements of the set don't contain the indexes in their structure.
  */
 public fun <E> reorderableSetOf(vararg elements: E): ReorderableSet<E> {
     return MapBasedReorderableSet(elements.toList())
