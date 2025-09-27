@@ -83,6 +83,10 @@ public open class OrderBitField internal constructor(internal val code: Code): O
 }
 
 public class BoundedOrderBitField internal constructor(code: Code, override val maxSize: UInt): OrderBitField(code), BoundedOrderField<OrderBitField, BoundedOrderBitField> {
+    init {
+        require(code.size.toUInt() <= maxSize) { "the size of the code must not exceed maxSize (internal error)" }
+    }
+
     override fun rPad(toSize: UInt): BoundedOrderBitField {
         require(toSize <= maxSize) { "toSize must not exceed maxSize" }
         val uSize = code.size.toUInt()
