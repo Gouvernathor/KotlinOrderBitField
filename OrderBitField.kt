@@ -3,23 +3,20 @@ package fr.gouvernathor.orderbitfield
 private val EMPTY_CODE: Code = emptyList()
 
 private object abstractOrderBitFieldFactory {
-    fun <O: OrderBitField> initial(n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
-        yieldAll(generateCodes(n, EMPTY_CODE, null, EMPTY_CODE).map(construct))
-    }
+    fun <O: OrderBitField> initial(n: UInt, construct: (Code) -> O): Sequence<O> =
+        generateCodes(n, EMPTY_CODE, null, EMPTY_CODE).map(construct)
 
     fun <O: OrderBitField> between(start: O, end: O, n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
-        require(start < end) { "start must be less than end" } // TODO
+        require(start < end) { "start must be less than end" }
         val prefix = commonPrefix(start.code, end.code)
         yieldAll(generateCodes(n, start.code.drop(prefix.size), end.code.drop(prefix.size), prefix).map(construct))
     }
 
-    fun <O: OrderBitField> before(other: O, n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
-        yieldAll(generateCodes(n, EMPTY_CODE, other.code, EMPTY_CODE).map(construct))
-    }
+    fun <O: OrderBitField> before(other: O, n: UInt, construct: (Code) -> O): Sequence<O> =
+        generateCodes(n, EMPTY_CODE, other.code, EMPTY_CODE).map(construct)
 
-    fun <O: OrderBitField> after(other: O, n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
-        yieldAll(generateCodes(n, other.code, null, EMPTY_CODE).map(construct))
-    }
+    fun <O: OrderBitField> after(other: O, n: UInt, construct: (Code) -> O): Sequence<O> =
+        generateCodes(n, other.code, null, EMPTY_CODE).map(construct)
 
     fun <O: OrderBitField> generate(start: Code?, end: Code?, n: UInt, construct: (Code) -> O): Sequence<O> = sequence {
         val prefix: Code
@@ -99,7 +96,9 @@ public open class OrderBitField internal constructor(internal val code: Code): O
     }
 }
 
-public class BoundedOrderBitField internal constructor(code: Code, override val maxSize: UInt): OrderBitField(code), BoundedOrderField<OrderBitField, BoundedOrderBitField> {
+public class BoundedOrderBitField internal constructor(
+    code: Code, override val maxSize: UInt
+): OrderBitField(code), BoundedOrderField<OrderBitField, BoundedOrderBitField> {
     init {
         require(code.size.toUInt() <= maxSize) { "the size of the code must not exceed maxSize (internal error)" }
     }
