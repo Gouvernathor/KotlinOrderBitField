@@ -7,8 +7,6 @@ public interface OrderValue<O: OrderValue<O, T>, T>: Comparable<O>
  * and such that it can be padded with zero-like elements to a given length.
  */
 public interface OrderField<O: OrderField<O, T>, T>: OrderValue<O, T> {
-    val bounded: Boolean
-
     fun rPad(padSize: UInt): OrderField<O, T>
 }
 
@@ -19,11 +17,9 @@ public interface OrderField<O: OrderField<O, T>, T>: OrderValue<O, T> {
 public interface BoundedOrderField<O: OrderField<O, T>, T>: OrderField<O, T> {
     /**
      * This must be set at the class level, not the instance level.
-     * (the interface will be changed when I find a way to do it)
+     * (the interface will be changed if I find a way to do it)
      */
     val maxSize: UInt
-    override val bounded: Boolean
-        get() = true
 
     override fun rPad(padSize: UInt): BoundedOrderField<O, T>
     fun rPad(): BoundedOrderField<O, T> = rPad(maxSize)
