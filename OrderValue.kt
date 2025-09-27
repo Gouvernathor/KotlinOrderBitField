@@ -1,43 +1,44 @@
 package fr.gouvernathor.orderbitfield
 
-public interface OrderValue<O: OrderValue<O, T>, T>: Comparable<O>
+/**
+ * Represents the ordering index of a value with respect to other similarly indexed values.
+ */
+public interface OrderValue<O: OrderValue<O>>: Comparable<O>
 
 /**
  * The backing type is (probably) a sequence, with a length,
  * and such that it can be padded with zero-like elements to a given length.
  */
-public interface OrderField<O: OrderField<O, T>, T>: OrderValue<O, T> {
-    fun rPad(toSize: UInt): OrderField<O, T>
+public interface OrderField<O: OrderField<O>>: OrderValue<O> {
+    fun rPad(toSize: UInt): OrderField<O>
 }
 
 /**
  * There is a maximum size for the backing sequence.
  * This enables some additional operations, like field concatenation.
  */
-public interface BoundedOrderField<BO: BoundedOrderField<BO, O, T>, O: OrderField<O, T>, T>: OrderField<O, T> {
+public interface BoundedOrderField<O: OrderField<O>, BO: BoundedOrderField<O, BO>>: OrderField<O> {
     val maxSize: UInt
 
-    override fun rPad(toSize: UInt): BoundedOrderField<BO, O, T>
-    fun rPad(): BoundedOrderField<BO, O, T> = rPad(maxSize)
+    override fun rPad(toSize: UInt): BoundedOrderField<O, BO>
+    fun rPad(): BoundedOrderField<O, BO> = rPad(maxSize)
     /**
      * In this case, the max size of the result is the sum of the max sizes of the two operands.
      */
-    operator fun plus(other: BO): BoundedOrderField<BO, O, T>
-    operator fun plus(other: O): OrderField<O, T>
+    operator fun plus(other: BO): BoundedOrderField<O, BO>
+    operator fun plus(other: O): OrderField<O>
 }
 
 
-interface OrderValueFactory<O: OrderValue<O, T>, T> {
-    // fun from(backing: T...): Sequence<O>
-
+interface OrderValueFactory<O: OrderValue<O>> {
     /**
-     * Yields O instances.
+     * Yields n instances of O.
      * Should return the shortest possible values (with types T where that makes sense),
      * and then as evenly distributed as possible.
      */
     fun initial(n: UInt = 1u): Sequence<O>
     /**
-     * Yields O instances that are between the two given O instances.
+     * Yields n instances of O that are between the two given O instances.
      * Should return the shortest possible values (with types T where that makes sense),
      * and then as evenly spaced between the two boundaries as possible.
      */

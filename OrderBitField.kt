@@ -1,6 +1,6 @@
 package fr.gouvernathor.orderbitfield
 
-public open class OrderBitField internal constructor(internal val code: Code): OrderField<OrderBitField, Code> {
+public open class OrderBitField internal constructor(internal val code: Code): OrderField<OrderBitField> {
     init {
         require(code.isNotEmpty()) { "code must not be empty (internal error)" }
     }
@@ -24,7 +24,7 @@ public open class OrderBitField internal constructor(internal val code: Code): O
     }
 }
 
-public class BoundedOrderBitField internal constructor(code: Code, override val maxSize: UInt): OrderBitField(code), BoundedOrderField<BoundedOrderBitField, OrderBitField, Code> {
+public class BoundedOrderBitField internal constructor(code: Code, override val maxSize: UInt): OrderBitField(code), BoundedOrderField<OrderBitField, BoundedOrderBitField> {
     override fun rPad(toSize: UInt): BoundedOrderBitField {
         require(toSize <= maxSize) { "toSize must not exceed maxSize" }
         val uSize = code.size.toUInt()
