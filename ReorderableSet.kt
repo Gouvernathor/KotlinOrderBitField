@@ -35,6 +35,7 @@ public interface ReorderableSet<E>: Set<E> {
      * When providing non-contiguous elements as start and end, the ordering
      * between, on one part, any element previously between start and end,
      * and on the other part, any of the new elements, is unspecified.
+     * (This doesn't apply if all the elements between start and end are passed in newElements.)
      * To avoid these issues, prefer using the putNextTo method.
      */
     fun putBetween(start: E, end: E, vararg newElements: E): Unit
