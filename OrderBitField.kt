@@ -97,6 +97,17 @@ public class BoundedOrderBitField internal constructor(code: Code, override val 
         require(code.size.toUInt() <= maxSize) { "the size of the code must not exceed maxSize (internal error)" }
     }
 
+    public class BoundedOrderBitFieldFactory(private val maxSize: UInt): OrderValueFactory<BoundedOrderBitField> {
+        override fun initial(n: UInt): Sequence<BoundedOrderBitField> =
+            abstractOrderBitFieldFactory.initial(n, { BoundedOrderBitField(it, maxSize) })
+        override fun between(start: BoundedOrderBitField, end: BoundedOrderBitField, n: UInt): Sequence<BoundedOrderBitField> =
+            abstractOrderBitFieldFactory.between(start, end, n, { BoundedOrderBitField(it, maxSize) })
+        override fun before(other: BoundedOrderBitField, n: UInt): Sequence<BoundedOrderBitField> =
+            abstractOrderBitFieldFactory.before(other, n, { BoundedOrderBitField(it, maxSize) })
+        override fun after(other: BoundedOrderBitField, n: UInt): Sequence<BoundedOrderBitField> =
+            abstractOrderBitFieldFactory.after(other, n, { BoundedOrderBitField(it, maxSize) })
+    }
+
     override fun rPad(toSize: UInt): BoundedOrderBitField {
         require(toSize <= maxSize) { "toSize must not exceed maxSize" }
         val uSize = code.size.toUInt()
