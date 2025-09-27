@@ -4,7 +4,6 @@ public typealias Code = List<UByte>
 
 private val MAX_BYTE = UByte.MAX_VALUE
 private val TOP_VALUE = MAX_BYTE + 1u
-private val MAGIC_MIDDLE = (TOP_VALUE / 2u).toUByte()
 
 /**
  * Requires s1 and s2 to be ordered, in that order.
@@ -142,7 +141,7 @@ private fun ponderatedDistributeIndices(
     var remaining = nCodes
 
     if (nCodes > nChars) {
-        val total = (mn..mx).map({ponderation[it.toUByte()]!!}).sum()
+        val total = (mn..mx).map { ponderation[it.toUByte()]!! } .sum()
         for (cInt in mn..mx) {
             val c = cInt.toUByte()
             val value = nCodes * ponderation[c]!! / total
