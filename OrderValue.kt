@@ -3,13 +3,13 @@ package fr.gouvernathor.orderbitfield
 /**
  * Represents the ordering index of a value with respect to other similarly indexed values.
  */
-public interface OrderValue<O: OrderValue<O>>: Comparable<O>
+public interface OrderValue<in O: OrderValue<O>>: Comparable<O>
 
 /**
  * The backing type is (probably) a sequence, with a length,
  * and such that it can be padded with zero-like elements to a given length.
  */
-public interface OrderField<O: OrderField<O>>: OrderValue<O> {
+public interface OrderField<in O: OrderField<O>>: OrderValue<O> {
     fun rPad(toSize: UInt): OrderField<O>
 }
 
@@ -17,7 +17,7 @@ public interface OrderField<O: OrderField<O>>: OrderValue<O> {
  * There is a maximum size for the backing sequence.
  * This enables some additional operations, like field concatenation.
  */
-public interface BoundedOrderField<O: OrderField<O>, BO: BoundedOrderField<O, BO>>: OrderField<O> {
+public interface BoundedOrderField<in O: OrderField<O>, in BO: BoundedOrderField<O, BO>>: OrderField<O> {
     val maxSize: UInt
 
     override fun rPad(toSize: UInt): BoundedOrderField<O, BO>
