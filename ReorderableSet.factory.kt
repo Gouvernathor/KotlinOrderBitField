@@ -42,7 +42,17 @@ public fun <E, O: OrderValue<O>> reorderableSetOf(
 ): ReorderableSet<E> =
     elements.toList().toReorderableSet(getCode, setCode, factory)
 
-// TODO add a String-based lambda version
+/**
+ * This version skips the need for a factory, using OrderStringField as the OrderValue type.
+ * This is less efficient (in memory and computation) than OrderBitField,
+ * but much more humanly readable, and more suitable for JSON serialization.
+ */
+public fun <E> reorderableSetOf(
+    getCode: (E) -> OrderStringField,
+    setCode: (E, OrderStringField) -> Unit,
+    vararg elements: E,
+): ReorderableSet<E> =
+    reorderableSetOf(getCode, setCode, OrderStringField, *elements)
 
 /**
  * This version skips the need for a factory, using OrderBitField as the OrderValue type.
@@ -96,7 +106,25 @@ public fun <E, O: OrderValue<O>> Array<E>.toReorderableSet(
 ): ReorderableSet<E> =
     this.toList().toReorderableSet(factory)
 
-// TODO add lambda-based String version
+// with OrderStringField implementation, and accessors
+
+public fun <E> Iterable<E>.toReorderableSet(
+    getCode: (E) -> OrderStringField,
+    setCode: (E, OrderStringField) -> Unit,
+): ReorderableSet<E> =
+    this.toReorderableSet(getCode, setCode, OrderStringField)
+
+public fun <E> Sequence<E>.toReorderableSet(
+    getCode: (E) -> OrderStringField,
+    setCode: (E, OrderStringField) -> Unit,
+): ReorderableSet<E> =
+    this.toReorderableSet(getCode, setCode, OrderStringField)
+
+public fun <E> Array<E>.toReorderableSet(
+    getCode: (E) -> OrderStringField,
+    setCode: (E, OrderStringField) -> Unit,
+): ReorderableSet<E> =
+    this.toReorderableSet(getCode, setCode, OrderStringField)
 
 // with OrderBitField implementation, and accessors
 
