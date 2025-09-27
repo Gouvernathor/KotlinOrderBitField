@@ -55,12 +55,7 @@ public open class OrderBitField internal constructor(internal val code: Code): O
                 prefix = EMPTY_CODE
             }
             val s = start ?: EMPTY_CODE
-            val e: Code?
-            if (end?.size ?: 0 > 0) {
-                e = end
-            } else {
-                e = null
-            }
+            val e = if (end?.size ?: 0 > 0) end else null
             yieldAll(generateCodes(n, s, e, prefix).map { construct(it, maxSize) })
         }
     }
