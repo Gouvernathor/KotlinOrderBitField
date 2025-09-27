@@ -29,6 +29,8 @@ internal fun generateCodes(
     codeEnd: Code?,
     prefix: Code,
 ): Sequence<Code> = sequence {
+    require(codeEnd == null || codeEnd.isNotEmpty()) { "codeEnd must be null or non-empty (internal error)" }
+
     if (nCodes == 0u) {
         return@sequence
     }
