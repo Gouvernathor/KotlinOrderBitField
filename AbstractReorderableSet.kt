@@ -1,12 +1,14 @@
 package fr.gouvernathor.orderbitfield
 
-internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSet<E>() {
+internal abstract class AbstractReorderableSet<E, O: OrderValue<O>>(
+    private val orderValueFactory: OrderValueFactory<O>,
+): ReorderableSet<E>, AbstractSet<E>() {
     abstract protected fun update(
-        pairs: Iterable<Pair<E, OrderBitField>>,
+        pairs: Iterable<Pair<E, O>>,
         mayBeNew: Boolean = true,
     ): Unit
 
-    override abstract val sortKey: (E) -> OrderBitField
+    override abstract val sortKey: (E) -> O
 
     operator override fun iterator(): Iterator<E> {
         return elements.asSequence().sortedBy(sortKey).iterator()
@@ -14,7 +16,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
 
     override fun putBetween(start: E, end: E, vararg newElements: E) {
         require(start != end) { "start and end must be different" }
-        val codes = OrderBitField.between(sortKey(start), sortKey(end), newElements.size.toUInt())
+        val codes = orderValueFactory.between(sortKey(start), sortKey(end), newElements.size.toUInt())
         update((newElements zip codes.toList()))
     }
 
@@ -22,14 +24,14 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
         // codes that will not be changed by this operation
         val unmovedCodes = elements.filter { it !in newElements }.map(sortKey)
 
-        val codes: Sequence<OrderBitField>
+        val codes: Sequence<O>
         val nCodes = newElements.size.toUInt()
         if (unmovedCodes.isEmpty()) {
-            codes = OrderBitField.initial(nCodes)
+            codes = orderValueFactory.initial(nCodes)
         } else if (last) {
-            codes = OrderBitField.after(unmovedCodes.max(), nCodes)
+            codes = orderValueFactory.after(unmovedCodes.max(), nCodes)
         } else {
-            codes = OrderBitField.before(unmovedCodes.min(), nCodes)
+            codes = orderValueFactory.before(unmovedCodes.min(), nCodes)
         }
         update((newElements zip codes.toList()))
     }
@@ -49,7 +51,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
 
         // one of the codes, that will be used as the boundary on the side of the anchor
         // in case the anchor is a part of the new elements
-        val anchorCode: OrderBitField?
+        val anchorCode: O?
         if (anchor in newElements) {
             if (after) {
                 anchorCode = unmovedCodesBefore.maxOrNull()
@@ -60,8 +62,8 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
             anchorCode = anchorTrueCode
         }
         // the actual boundary codes
-        val start: OrderBitField?
-        val end: OrderBitField?
+        val start: O?
+        val end: O?
         if (after) {
             start = anchorCode
             end = unmovedCodesAfter.minOrNull()
@@ -70,7 +72,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
             end = anchorCode
         }
         // the new codes
-        val codes = OrderBitField.generate(start, end, newElements.size.toUInt())
+        val codes = orderValueFactory.generate(start, end, newElements.size.toUInt())
         update((newElements zip codes.toList()))
     }
 
@@ -80,7 +82,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
      * yields unspecified ordering with the intermingled elements.
      */
     private fun fullRecompute(elements: Collection<E>) {
-        val codes = OrderBitField.initial(elements.size.toUInt())
+        val codes = orderValueFactory.initial(elements.size.toUInt())
         update((elements zip codes.toList()), false)
     }
     override fun recompute() {
@@ -95,14 +97,14 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
 
     private fun partialRecompute(start: E?, end: E?, sorter: (Collection<E>) -> Collection<E>) {
         var tranche: Collection<E> = this
-        val startCode: OrderBitField?
+        val startCode: O?
         if (start != null) {
             startCode = sortKey(start)
             tranche = tranche.dropWhile { startCode <= sortKey(it) }
         } else {
             startCode = null
         }
-        val endCode: OrderBitField?
+        val endCode: O?
         if (end != null) {
             endCode = sortKey(end)
             tranche = tranche.takeWhile { sortKey(it) < endCode }
@@ -110,7 +112,7 @@ internal abstract class AbstractReorderableSet<E>: ReorderableSet<E>, AbstractSe
             endCode = null
         }
         // the new codes
-        val codes = OrderBitField.generate(startCode, endCode, tranche.size.toUInt())
+        val codes = orderValueFactory.generate(startCode, endCode, tranche.size.toUInt())
         update((sorter(tranche) zip codes.toList()))
     }
     override fun <R : Comparable<R>> sortTrancheBy(start: E?, end: E?, selector: (E) -> R) {

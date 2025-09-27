@@ -2,20 +2,21 @@ package fr.gouvernathor.orderbitfield
 
 internal fun <E> MapBasedReorderableSet(elements: Collection<E>): ReorderableSet<E> {
     if (elements.isEmpty()) {
-        return MapBasedReorderableSet(mutableMapOf())
+        return MapBasedReorderableSet(mutableMapOf(), OrderBitField)
     } else {
         val codes = OrderBitField.initial(elements.size.toUInt()).toList()
-        return MapBasedReorderableSet((elements zip codes).toMap().toMutableMap())
+        return MapBasedReorderableSet((elements zip codes).toMap().toMutableMap(), OrderBitField)
     }
 }
 
-private class MapBasedReorderableSet<E>(
-    private val store: MutableMap<E, OrderBitField>,
-): AbstractReorderableSet<E>() {
+private class MapBasedReorderableSet<E, O: OrderValue<O>>(
+    private val store: MutableMap<E, O>,
+    orderValueFactory: OrderValueFactory<O>,
+): AbstractReorderableSet<E, O>(orderValueFactory) {
 
     // AbstractReorderableSet method
 
-    override fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean) {
+    override fun update(pairs: Iterable<Pair<E, O>>, mayBeNew: Boolean) {
         store.putAll(pairs)
     }
 
@@ -35,7 +36,7 @@ private class MapBasedReorderableSet<E>(
     override val elements: Iterable<E>
         get() = store.keys
 
-    override val sortKey: (E) -> OrderBitField = { store[it]!! }
+    override val sortKey: (E) -> O = { store[it]!! }
 
     override fun remove(element: E): Boolean {
         return store.remove(element) != null
@@ -54,18 +55,19 @@ internal fun <E> SetLambdaBasedReorderableSet(
     setCode: (E, OrderBitField) -> Unit,
     elements: Iterable<E>,
 ): ReorderableSet<E> {
-    return SetLambdaBasedReorderableSet(getCode, setCode, elements.toMutableSet())
+    return SetLambdaBasedReorderableSet(getCode, setCode, elements.toMutableSet(), OrderBitField)
 }
 
-private class SetLambdaBasedReorderableSet<E>(
-    private val getCode: (E) -> OrderBitField,
-    private val setCode: (E, OrderBitField) -> Unit,
+private class SetLambdaBasedReorderableSet<E, O: OrderValue<O>>(
+    private val getCode: (E) -> O,
+    private val setCode: (E, O) -> Unit,
     private val store: MutableSet<E>,
-): AbstractReorderableSet<E>() {
+    orderValueFactory: OrderValueFactory<O>,
+): AbstractReorderableSet<E, O>(orderValueFactory) {
 
     // AbstractReorderableSet method
 
-    override fun update(pairs: Iterable<Pair<E, OrderBitField>>, mayBeNew: Boolean) {
+    override fun update(pairs: Iterable<Pair<E, O>>, mayBeNew: Boolean) {
         pairs.forEach { (element, code) -> setCode(element, code) }
         if (mayBeNew) {
             store.addAll(pairs.map { it.first })
@@ -88,7 +90,7 @@ private class SetLambdaBasedReorderableSet<E>(
     override val elements: Iterable<E>
         get() = store
 
-    override val sortKey: (E) -> OrderBitField = getCode
+    override val sortKey: (E) -> O = getCode
 
     override fun remove(element: E): Boolean {
         return store.remove(element)
