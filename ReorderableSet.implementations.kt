@@ -1,11 +1,14 @@
 package fr.gouvernathor.orderbitfield
 
-internal fun <E> MapBasedReorderableSet(elements: Collection<E>): ReorderableSet<E> {
+internal fun <E, O: OrderValue<O>> MapBasedReorderableSet(
+    elements: Collection<E>,
+    factory: OrderValueFactory<O>,
+): ReorderableSet<E> {
     if (elements.isEmpty()) {
-        return MapBasedReorderableSet(mutableMapOf(), OrderBitField)
+        return MapBasedReorderableSet(mutableMapOf(), factory)
     } else {
-        val codes = OrderBitField.initial(elements.size.toUInt()).toList()
-        return MapBasedReorderableSet((elements zip codes).toMap().toMutableMap(), OrderBitField)
+        val codes = factory.initial(elements.size.toUInt()).toList()
+        return MapBasedReorderableSet((elements zip codes).toMap().toMutableMap(), factory)
     }
 }
 
@@ -50,12 +53,13 @@ private class MapBasedReorderableSet<E, O: OrderValue<O>>(
     }
 }
 
-internal fun <E> SetLambdaBasedReorderableSet(
-    getCode: (E) -> OrderBitField,
-    setCode: (E, OrderBitField) -> Unit,
+internal fun <E, O: OrderValue<O>> SetLambdaBasedReorderableSet(
+    getCode: (E) -> O,
+    setCode: (E, O) -> Unit,
+    factory: OrderValueFactory<O>,
     elements: Iterable<E>,
 ): ReorderableSet<E> {
-    return SetLambdaBasedReorderableSet(getCode, setCode, elements.toMutableSet(), OrderBitField)
+    return SetLambdaBasedReorderableSet(getCode, setCode, elements.toMutableSet(), factory)
 }
 
 private class SetLambdaBasedReorderableSet<E, O: OrderValue<O>>(
