@@ -7,27 +7,23 @@ public interface OrderValue<O: OrderValue<O, T>, T>: Comparable<O>
  * and such that it can be padded with zero-like elements to a given length.
  */
 public interface OrderField<O: OrderField<O, T>, T>: OrderValue<O, T> {
-    fun rPad(padSize: UInt): OrderField<O, T>
+    fun rPad(toSize: UInt): OrderField<O, T>
 }
 
 /**
  * There is a maximum size for the backing sequence.
  * This enables some additional operations, like field concatenation.
  */
-public interface BoundedOrderField<O: OrderField<O, T>, T>: OrderField<O, T> {
-    /**
-     * This must be set at the class level, not the instance level.
-     * (the interface will be changed if I find a way to do it)
-     */
+public interface BoundedOrderField<BO: BoundedOrderField<BO, O, T>, O: OrderField<O, T>, T>: OrderField<O, T> {
     val maxSize: UInt
 
-    override fun rPad(padSize: UInt): BoundedOrderField<O, T>
-    fun rPad(): BoundedOrderField<O, T> = rPad(maxSize)
+    override fun rPad(toSize: UInt): BoundedOrderField<BO, O, T>
+    fun rPad(): BoundedOrderField<BO, O, T> = rPad(maxSize)
     /**
      * In this case, the max size of the result is the sum of the max sizes of the two operands.
      */
-    operator fun plus(other: BoundedOrderField<O, T>): BoundedOrderField<O, T>
-    operator fun plus(other: OrderField<O, T>): OrderField<O, T>
+    operator fun plus(other: BO): BoundedOrderField<BO, O, T>
+    operator fun plus(other: O): OrderField<O, T>
 }
 
 

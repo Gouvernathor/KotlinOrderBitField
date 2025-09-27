@@ -1,108 +1,46 @@
 package fr.gouvernathor.orderbitfield
 
-internal val EMPTY_CODE: Code = emptyList()
-
-/**
- * Represents the ordering index of a value with respect to other similarly indexed values.
- */
-public class OrderBitField protected constructor(code: Code, val maxSize: UInt?): Code by code, Comparable<OrderBitField> {
+public open class OrderBitField internal constructor(internal val code: Code): OrderField<OrderBitField, Code> {
     init {
         require(code.isNotEmpty()) { "code must not be empty (internal error)" }
-        require(maxSize == null || (code.size.toUInt() <= maxSize)) { "code is larger than maxSize" }
     }
 
-    val bounded: Boolean
-        get() = maxSize != null
+    // companion object (later)
 
-    companion object {
-        /**
-         * Constructor, yields OrderBitField instances.
-         * Returns the shortest possible values,
-         * and then as evenly distributed as possible.
-         */
-        fun initial(n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            yieldAll(generateCodes(n, EMPTY_CODE, null, EMPTY_CODE).map { OrderBitField(it, maxSize) })
-        }
-
-        /**
-         * Constructor, yields OrderBitField instances that are between the two given OrderBitField instances.
-         * Returns the shortest possible values,
-         * and then as evenly spaced between the two boundaries as possible.
-         */
-        fun between(start: OrderBitField, end: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            require(start < end) { "start must be less than end" }
-            val prefix = commonPrefix(start, end)
-            yieldAll(generateCodes(n, start.drop(prefix.size), end.drop(prefix.size), prefix).map { OrderBitField(it, maxSize) })
-        }
-
-        fun before(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            yieldAll(generateCodes(n, EMPTY_CODE, other, EMPTY_CODE).map { OrderBitField(it, maxSize) })
-        }
-
-        fun after(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            yieldAll(generateCodes(n, other, null, EMPTY_CODE).map { OrderBitField(it, maxSize) })
-        }
-
-        /**
-         * Multi-purpose version of the 4 functions above,
-         * pass null to remove a boundary,
-         * accepts Code instead of only OrderBitField,
-         * doesn't check that the boundaries are correctly ordered.
-         */
-        fun generate(start: Code?, end: Code?, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
-            val prefix: Code
-            if (start != null && end != null) {
-                prefix = commonPrefix(start, end)
-            } else {
-                prefix = EMPTY_CODE
-            }
-            val s = start ?: EMPTY_CODE
-            val e: Code?
-            if (end?.size ?: 0 > 0) {
-                e = end
-            } else {
-                e = null
-            }
-            yieldAll(generateCodes(n, s, e, prefix).map { OrderBitField(it, maxSize) })
-        }
-    }
-
-    override operator fun compareTo(other: OrderBitField): Int {
-        val n = size.coerceAtMost(other.size)
+    override fun compareTo(other: OrderBitField): Int {
+        val n = code.size.coerceAtMost(other.code.size)
         for (i in 0..<n) {
-            val diff = this[i].compareTo(other[i])
+            val diff = code[i].compareTo(other.code[i])
             if (diff != 0) return diff
         }
-        return size.compareTo(other.size)
+        return code.size.compareTo(other.code.size)
     }
 
-    /**
-     * Returns an OrderBitField instance whose size is exactly the given size (or the native maxsize if not provided).
-     * Primarily used as part as code concatenation,
-     * also useful when matching a BINARY(x) (rather than VARBINARY) column in a database.
-     */
-    fun rPad(padSize: UInt? = maxSize): OrderBitField {
-        require(padSize != null) { "the pad size must be specified when the OrderBitField is unbounded" }
-        val uSize = size.toUInt()
-        if (padSize == uSize) return this
-        require(padSize <= uSize) { "the pad size must be lesser or equal to the size" }
-        return OrderBitField(this as Code + (List((padSize - uSize).toInt()) { 0u.toUByte() }), maxSize)
+    override fun rPad(toSize: UInt): OrderBitField {
+        val uSize = code.size.toUInt()
+        if (toSize == uSize) return this
+        require(toSize > uSize) { "toSize must be greater or equal to the current size" }
+        return OrderBitField(code + (List((toSize - uSize).toInt()) { 0u.toUByte() }))
     }
+}
 
-    /**
-     * Addition is only supported when the left operand is bounded (when it has a maxSize).
-     *
-     * To support this uniformly in systems where orderBitFields always have the same maxSize,
-     * (for instance when they match a VARBINARY(x) column in a database),
-     * you can simply provide a replacement for the Companion object whose methods take no maxSize parameter,
-     * and pass the chosen maxSize to the actual Companion collective constructor functions.
-     * If/when it matches a BINARY(x) column, you can make the proxy Companion object's methods
-     * map their return values using OrderBitField::rPad.
-     */
-    operator fun plus(other: OrderBitField): OrderBitField {
-        require(bounded) { "the left operand must be bounded for addition to work" }
-        val code = this.rPad() + other as Code
-        val newMaxSize = other.maxSize ?.plus(maxSize!!)
-        return OrderBitField(code, newMaxSize)
+public class BoundedOrderBitField internal constructor(code: Code, override val maxSize: UInt): OrderBitField(code), BoundedOrderField<BoundedOrderBitField, OrderBitField, Code> {
+    override fun rPad(toSize: UInt): BoundedOrderBitField {
+        require(toSize <= maxSize) { "toSize must not exceed maxSize" }
+        val uSize = code.size.toUInt()
+        if (toSize == uSize) return this
+        require(toSize > uSize) { "toSize must be greater or equal to the current size" }
+        return BoundedOrderBitField(code + (List((toSize - uSize).toInt()) { 0u.toUByte() }), maxSize)
+    }
+    override fun rPad(): BoundedOrderBitField = rPad(maxSize)
+
+    override operator fun plus(other: BoundedOrderBitField): BoundedOrderBitField {
+        val code = rPad().code + other.code
+        val newMaxSize = maxSize + other.maxSize
+        return BoundedOrderBitField(code, newMaxSize)
+    }
+    override operator fun plus(other: OrderBitField): OrderBitField {
+        val code = rPad().code + other.code
+        return OrderBitField(code)
     }
 }
