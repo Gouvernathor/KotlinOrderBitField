@@ -2,10 +2,10 @@ package fr.gouvernathor.orderbitfield
 
 import kotlin.toUInt
 
-private val CHAR_RANGE = 'a'..'z'
-private val MIN_CHAR = CHAR_RANGE.first
-private val MAX_CHAR = CHAR_RANGE.last
-private val NCHARS = CHAR_RANGE.count().toUInt()
+internal val LEGAL_CHARS = 'a'..'z'
+private val MIN_CHAR = LEGAL_CHARS.first
+private val MAX_CHAR = LEGAL_CHARS.last
+private val NCHARS = LEGAL_CHARS.count().toUInt()
 
 /**
  * Requires s1 and s2 to be ordered, in that order.
