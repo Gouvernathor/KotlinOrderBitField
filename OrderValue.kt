@@ -45,4 +45,5 @@ interface OrderValueFactory<O: OrderValue<O>> {
     fun between(start: O, end: O, n: UInt = 1u): Sequence<O>
     fun before(other: O, n: UInt = 1u): Sequence<O>
     fun after(other: O, n: UInt = 1u): Sequence<O>
+    fun generate(start: O?, end: O?, n: UInt = 1u): Sequence<O>
 }

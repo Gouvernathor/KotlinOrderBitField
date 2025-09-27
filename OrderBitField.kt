@@ -32,6 +32,9 @@ private object abstractOrderBitFieldFactory {
         val e = if (end?.size ?: 0 > 0) end else null
         yieldAll(generateCodes(n, s, e, prefix).map(construct))
     }
+
+    fun <O: OrderBitField> generate(start: O?, end: O?, n: UInt, construct: (Code) -> O): Sequence<O> =
+        generate(start?.code, end?.code, n, construct)
 }
 
 public open class OrderBitField internal constructor(internal val code: Code): OrderField<OrderBitField> {
@@ -64,6 +67,8 @@ public open class OrderBitField internal constructor(internal val code: Code): O
          */
         fun generate(start: Code?, end: Code?, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> =
             abstractOrderBitFieldFactory.generate(start, end, n, getConstruct(maxSize))
+        fun generate(start: OrderBitField?, end: OrderBitField?, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> =
+            generate(start?.code, end?.code, n, maxSize)
 
         override fun initial(n: UInt) =
             abstractOrderBitFieldFactory.initial(n, ::OrderBitField)
@@ -73,6 +78,8 @@ public open class OrderBitField internal constructor(internal val code: Code): O
             abstractOrderBitFieldFactory.before(other, n, ::OrderBitField)
         override fun after(other: OrderBitField, n: UInt) =
             abstractOrderBitFieldFactory.after(other, n, ::OrderBitField)
+        override fun generate(start: OrderBitField?, end: OrderBitField?, n: UInt) =
+            abstractOrderBitFieldFactory.generate(start, end, n, ::OrderBitField)
     }
 
     override fun compareTo(other: OrderBitField): Int {
@@ -106,6 +113,8 @@ public class BoundedOrderBitField internal constructor(code: Code, override val 
             abstractOrderBitFieldFactory.before(other, n, { BoundedOrderBitField(it, maxSize) })
         override fun after(other: BoundedOrderBitField, n: UInt) =
             abstractOrderBitFieldFactory.after(other, n, { BoundedOrderBitField(it, maxSize) })
+        override fun generate(start: BoundedOrderBitField?, end: BoundedOrderBitField?, n: UInt) =
+            abstractOrderBitFieldFactory.generate(start, end, n, { BoundedOrderBitField(it, maxSize) })
     }
 
     override fun rPad(toSize: UInt): BoundedOrderBitField {
