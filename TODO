@@ -6,3 +6,23 @@
   - how to use OBF as a field of a class, to sort built-in containers of that type
   - how to use the provided container type
   - how to convert to and from a database
+
+
+# new stuff
+
+- make an OrderValue abstract class that is a generalization of OrderBitField but without the actual bitfield storage, that is generic on the storage type
+- subclasses of OrderValue should implement Comparable with themself
+- OrderValue should have an abstract protected comparator for its generic type
+- OrderValue subclasses should have a generator of objects of the type they are generic on
+- OrderBitField is a subclass of OrderValue<BitField>
+- maybe make a subclass that works on a-z letters, for easier JSON serialization
+- maybe make a subclass that works on signed byte lists/arrays, for the kinks of what it may change to the algorithm (also for compatibility with most type systems where unsigned bytes don't exist, like Java)
+
+- remove the non-reordering methods from ReorderableSet, and put them in a sub-interface called ExtendableReorderableSet (or something)
+- ReorderableSet (and the other one) are generic in a specific implementation of OrderValue : you can't mix several subclasses across a single set
+  - maybe make OrderValue generically self-referential like Enum (to be seen in OrderValue, for the comparable aspect mostly)
+- or, ReorderableSet could be generic in <T extends Comparable<T>>, and only the implementations called by the factory methods specifically use (or require) OrderValue subclasses
+
+- a factory function should be provided to create a ReorderableSet with a specific but arbitrary OrderValue subclass
+- in order to do that, an object creating instances of that OrderValue subclass (the handful of methods to cover the different insertion situations) should be provided to the factory function
+- such an object resembles the static companion object of the OrderBitField : it could be required that each final subclass of OrderValue provide such a companion object, implementing a specific interface that's generic in the OrderValue subclass
