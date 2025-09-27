@@ -98,13 +98,13 @@ public class BoundedOrderBitField internal constructor(code: Code, override val 
     }
 
     public class BoundedOrderBitFieldFactory(private val maxSize: UInt): OrderValueFactory<BoundedOrderBitField> {
-        override fun initial(n: UInt): Sequence<BoundedOrderBitField> =
+        override fun initial(n: UInt) =
             abstractOrderBitFieldFactory.initial(n, { BoundedOrderBitField(it, maxSize) })
-        override fun between(start: BoundedOrderBitField, end: BoundedOrderBitField, n: UInt): Sequence<BoundedOrderBitField> =
+        override fun between(start: BoundedOrderBitField, end: BoundedOrderBitField, n: UInt) =
             abstractOrderBitFieldFactory.between(start, end, n, { BoundedOrderBitField(it, maxSize) })
-        override fun before(other: BoundedOrderBitField, n: UInt): Sequence<BoundedOrderBitField> =
+        override fun before(other: BoundedOrderBitField, n: UInt) =
             abstractOrderBitFieldFactory.before(other, n, { BoundedOrderBitField(it, maxSize) })
-        override fun after(other: BoundedOrderBitField, n: UInt): Sequence<BoundedOrderBitField> =
+        override fun after(other: BoundedOrderBitField, n: UInt) =
             abstractOrderBitFieldFactory.after(other, n, { BoundedOrderBitField(it, maxSize) })
     }
 
