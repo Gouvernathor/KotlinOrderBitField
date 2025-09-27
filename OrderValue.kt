@@ -26,10 +26,30 @@ public interface BoundedOrderField<O: OrderField<O, T>, T>: OrderField<O, T> {
         get() = true
 
     override fun rPad(padSize: UInt): BoundedOrderField<O, T>
-    fun rPad(): BoundedOrderField<O, T>
+    fun rPad(): BoundedOrderField<O, T> = rPad(maxSize)
     /**
      * In this case, the max size of the result is the sum of the max sizes of the two operands.
      */
     operator fun plus(other: BoundedOrderField<O, T>): BoundedOrderField<O, T>
     operator fun plus(other: OrderField<O, T>): OrderField<O, T>
+}
+
+
+interface OrderValueFactory<O: OrderValue<O, T>, T> {
+    // fun from(backing: T...): Sequence<O>
+
+    /**
+     * Yields O instances.
+     * Should return the shortest possible values (with types T where that makes sense),
+     * and then as evenly distributed as possible.
+     */
+    fun initial(n: UInt = 1u): Sequence<O>
+    /**
+     * Yields O instances that are between the two given O instances.
+     * Should return the shortest possible values (with types T where that makes sense),
+     * and then as evenly spaced between the two boundaries as possible.
+     */
+    fun between(start: O, end: O, n: UInt = 1u): Sequence<O>
+    fun before(other: O, n: UInt = 1u): Sequence<O>
+    fun after(other: O, n: UInt = 1u): Sequence<O>
 }
