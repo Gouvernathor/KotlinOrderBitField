@@ -23,10 +23,10 @@ public interface ReorderableSet<E>: Set<E> {
     /**
      * A key function, to be passed in the sortedBy function.
      */
-    val sortKey: (E) -> Comparable<*>
+    val sortKey: (E) -> OrderValue<*>
 
     /**
-     * Put the elements between the stard and end elements.
+     * Put the elements between the start and end elements.
      * It is an error to provide the same element as both start and end,
      * or to provide start or end elements which are not in the container.
      * It is unspecified and at the very least unoptimized to include the start or end element in the new elements.
