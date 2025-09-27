@@ -1,11 +1,69 @@
 package fr.gouvernathor.orderbitfield
 
+private val EMPTY_CODE: Code = emptyList()
+
 public open class OrderBitField internal constructor(internal val code: Code): OrderField<OrderBitField> {
     init {
         require(code.isNotEmpty()) { "code must not be empty (internal error)" }
     }
 
-    // companion object (later)
+    /**
+     * Constructs both OrderBitField and BoundedOrderBitField instances.
+     */
+    companion object: OrderValueFactory<OrderBitField> {
+        private fun construct(code: Code, maxSize: UInt?): OrderBitField {
+            return if (maxSize != null) {
+                BoundedOrderBitField(code, maxSize)
+            } else {
+                OrderBitField(code)
+            }
+        }
+
+        fun initial(n: UInt, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
+            yieldAll(generateCodes(n, EMPTY_CODE, null, EMPTY_CODE).map { construct(it, maxSize) })
+        }
+        override fun initial(n: UInt) = initial(n, null)
+
+        fun between(start: OrderBitField, end: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
+            require(start < end) { "start must be less than end" }
+            val prefix = commonPrefix(start.code, end.code)
+            yieldAll(generateCodes(n, start.code.drop(prefix.size), end.code.drop(prefix.size), prefix).map { construct(it, maxSize) })
+        }
+        override fun between(start: OrderBitField, end: OrderBitField, n: UInt) = between(start, end, n, null)
+
+        fun before(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
+            yieldAll(generateCodes(n, EMPTY_CODE, other.code, EMPTY_CODE).map { construct(it, maxSize) })
+        }
+        override fun before(other: OrderBitField, n: UInt) = before(other, n, null)
+
+        fun after(other: OrderBitField, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
+            yieldAll(generateCodes(n, other.code, null, EMPTY_CODE).map { construct(it, maxSize) })
+        }
+        override fun after(other: OrderBitField, n: UInt) = after(other, n, null)
+
+        /**
+         * Multi-purpose version of the 4 functions above,
+         * pass null to remove a boundary,
+         * accepts Code instead of only OrderBitField,
+         * doesn't check that the boundaries are correctly ordered.
+         */
+        fun generate(start: Code?, end: Code?, n: UInt = 1u, maxSize: UInt? = null): Sequence<OrderBitField> = sequence {
+            val prefix: Code
+            if (start != null && end != null) {
+                prefix = commonPrefix(start, end)
+            } else {
+                prefix = EMPTY_CODE
+            }
+            val s = start ?: EMPTY_CODE
+            val e: Code?
+            if (end?.size ?: 0 > 0) {
+                e = end
+            } else {
+                e = null
+            }
+            yieldAll(generateCodes(n, s, e, prefix).map { construct(it, maxSize) })
+        }
+    }
 
     override fun compareTo(other: OrderBitField): Int {
         val n = code.size.coerceAtMost(other.code.size)
